@@ -18,16 +18,46 @@ Leemos los documentos.
 ```{r echo=FALSE}
 library(readtext)
 
+hilos = 8
+
 #Ruta de trabajo
 setwd("~/TFM")
 
-ruta = "/legalcorpuses*"
+ruta = "/legalcorpuses"
 #ruta = "/../InnoSpace/data/corpus_data/Airbus/raw/documents*"
 #ruta = "/../InnoSpace/data/corpus_data/BibliotecaJuridicaDigital/raw/documents*"
 #ruta = "/../InnoSpace/data/corpus_data/covid19/raw/documents*"
+```
+
+
+
+```{r}
+
+# get encoding from filename
+filenames <- list.files(FILEDIR, "^(Indian|UDHR_).*\\.txt$")
+
+head(filenames)
+## [1] "IndianTreaty_English_UTF-16LE.txt"  "IndianTreaty_English_UTF-8-BOM.txt"
+## [3] "UDHR_Arabic_ISO-8859-6.txt"         "UDHR_Arabic_UTF-8.txt"             
+## [5] "UDHR_Arabic_WINDOWS-1256.txt"       "UDHR_Chinese_GB2312.txt"
+
+# Strip the extension
+filenames <- gsub(".txt$", "", filenames)
+parts <- strsplit(filenames, "_")
+fileencodings <- sapply(parts, "[", 3)
+
+head(fileencodings)
+## [1] "UTF-16LE"     "UTF-8-BOM"    "ISO-8859-6"   "UTF-8"        "WINDOWS-1256"
+## [6] "GB2312"
+
+# Check whether certain file encodings are not supported
+notAvailableIndex <- which(!(fileencodings %in% iconvlist()))
+fileencodings[notAvailableIndex]
+## [1] "UTF-8-BOM"
+
 
 #Leer un corpus
-docs <- readtext(paste0(getwd(), ruta), #Leo todo lo que tenga ese path
+docs <- readtext(paste0(getwd(), ruta, "*"), #Leo todo lo que tenga ese path
                  #docvarsfrom = "filenames", 
                  #docvarnames = c("document", "language"),
                  #dvsep = "_", 
@@ -44,7 +74,7 @@ Creamos el corpus de quanteda
 library(quanteda)
 
 # create quanteda corpus
-quanteda_options(threads = 16)
+quanteda_options(threads = hilos)
 quancorpusDocs <- corpus(docs)
 
 #Obtenemos un resumen del corpus que hemops creado
@@ -61,21 +91,6 @@ tDocs <- texts(quancorpusDocs) #No tarda nada.
 
 
 Limpiamos los textos extraidos
-```{r}
-library(stringr)
-
-#Si fuera necesario, hay que limpiar los textos extraidos de los documentos
-
-t2  <- str_replace_all(tDocs, 
-                          c("\001" = "",
-                            "\002" = "",
-                            "\003" = "",
-                            "\004" = "",
-                            "\005" = "",
-                            "\006" = ""
-                           )
-                       )
-```
 
 
 Descargamos el modelo udpipe de Google y extraemos los terminos.
@@ -114,7 +129,7 @@ udmodel_spanish_gsd <- udpipe_load_model(file = 'spanish-gsd-ud-2.4-190531.udpip
 path <- model$file_model
 
 tic()
-x <- udpipe(t2, path, parallel.cores = 16)
+x <- udpipe(tDocs, path, parallel.cores = hilos)
 toc()
 
 #saveRDS(x, file = "airbus.rds")
@@ -189,6 +204,8 @@ head(stats)
 library(igraph)
 library(ggraph)
 library(ggplot2)
+library(extrafont)
+
 wordnetwork <- head(stats, 30)
 wordnetwork <- graph_from_data_frame(wordnetwork)
 ggraph(wordnetwork, layout = "fr") +
@@ -208,7 +225,7 @@ stats <- textrank_keywords(x$lemma,
                           ngram_max = 8, sep = " ")
 stats <- subset(stats$keywords, ngram > 1 & freq >= 5)
 library(wordcloud)
-wordcloud(words = stats$keyword, freq = stats$freq)
+suppressWarnings(wordcloud(words = stats$keyword, freq = stats$freq))
 ```
 
 
