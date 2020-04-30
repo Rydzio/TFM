@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1588099373419.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2691117885",
+    "id" : "D512DDE5",
+    "lastKnownWriteTime" : 1588096697,
+    "last_content_update" : 1588096697,
+    "path" : "~/TFM/TerminologíasInteractivas/global.R",
+    "project_path" : "global.R",
+    "properties" : {
+        "cursorPosition" : "18,40",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
