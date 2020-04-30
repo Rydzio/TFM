@@ -20,6 +20,8 @@ library(readtext)
 
 hilos = 8
 
+font_import()
+
 #Ruta de trabajo
 setwd("~/TFM")
 
@@ -33,7 +35,7 @@ docs <- readtext(paste0(getwd(), ruta, "*"), #Leo todo lo que tenga ese path
                  #docvarsfrom = "filenames", 
                  #docvarnames = c("document", "language"),
                  #dvsep = "_", 
-                 #encoding = "ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
+                 encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
                  verbosity = 0) 
 
 print("Se han leido los documentos del corpus con éxito")
@@ -93,7 +95,7 @@ library(udpipe)
 library(tictoc)
 
 model <- udpipe_download_model(language = "spanish")
-udmodel_spanish_gsd <- udpipe_load_model(file = 'spanish-gsd-ud-2.4-190531.udpipe')
+#udmodel_spanish_gsd <- udpipe_load_model(file = 'spanish-gsd-ud-2.4-190531.udpipe')
 
 path <- model$file_model
 
