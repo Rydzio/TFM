@@ -23,38 +23,10 @@ hilos = 8
 #Ruta de trabajo
 setwd("~/TFM")
 
-ruta = "/legalcorpuses"
+ruta = "/legalcorpuses*"
 #ruta = "/../InnoSpace/data/corpus_data/Airbus/raw/documents*"
 #ruta = "/../InnoSpace/data/corpus_data/BibliotecaJuridicaDigital/raw/documents*"
 #ruta = "/../InnoSpace/data/corpus_data/covid19/raw/documents*"
-```
-
-
-
-```{r}
-
-# get encoding from filename
-filenames <- list.files(FILEDIR, "^(Indian|UDHR_).*\\.txt$")
-
-head(filenames)
-## [1] "IndianTreaty_English_UTF-16LE.txt"  "IndianTreaty_English_UTF-8-BOM.txt"
-## [3] "UDHR_Arabic_ISO-8859-6.txt"         "UDHR_Arabic_UTF-8.txt"             
-## [5] "UDHR_Arabic_WINDOWS-1256.txt"       "UDHR_Chinese_GB2312.txt"
-
-# Strip the extension
-filenames <- gsub(".txt$", "", filenames)
-parts <- strsplit(filenames, "_")
-fileencodings <- sapply(parts, "[", 3)
-
-head(fileencodings)
-## [1] "UTF-16LE"     "UTF-8-BOM"    "ISO-8859-6"   "UTF-8"        "WINDOWS-1256"
-## [6] "GB2312"
-
-# Check whether certain file encodings are not supported
-notAvailableIndex <- which(!(fileencodings %in% iconvlist()))
-fileencodings[notAvailableIndex]
-## [1] "UTF-8-BOM"
-
 
 #Leer un corpus
 docs <- readtext(paste0(getwd(), ruta, "*"), #Leo todo lo que tenga ese path
@@ -93,7 +65,7 @@ tDocs <- texts(quancorpusDocs) #No tarda nada.
 Descargamos el modelo udpipe de Google y extraemos los terminos.
 ```{r}
 #library(udpipe)
-library(tictoc)
+#library(tictoc)
 
 
 #Descargamos el modelo que deseamos utilzar
