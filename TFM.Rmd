@@ -90,9 +90,6 @@ tDocs <- texts(quancorpusDocs) #No tarda nada.
 ```
 
 
-Limpiamos los textos extraidos
-
-
 Descargamos el modelo udpipe de Google y extraemos los terminos.
 ```{r}
 #library(udpipe)
@@ -218,7 +215,7 @@ ggraph(wordnetwork, layout = "fr") +
 
 
 
-```{r}
+```{r warning=FALSE}
 library(textrank)
 stats <- textrank_keywords(x$lemma, 
                           relevant = x$upos %in% c("NOUN", "ADJ"), 
@@ -266,6 +263,8 @@ stats2 <- keywords_phrases(x = x$phrase_tag,
                                           #With FALSE you get keyword, ngram, freq, key
                          )
 ```
+
+
 Patrón 2
 ```{r}
 x$phrase_tag <- as_phrasemachine(x$upos, 
@@ -288,6 +287,20 @@ stats3  <- keywords_phrases(x = x$phrase_tag,
                                           #With FALSE you get keyword, ngram, freq, key
                          )
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Otros patrones
 <!-- # ```{r} -->
 <!-- # x$phrase_tag <- as_phrasemachine(x$upos,  -->
@@ -313,11 +326,11 @@ Otros patrones
 <!-- #                          ) -->
 <!-- # ``` -->
 
-```{r}
-# saveRDS(stats, file = "legalTerminology.rds")
-# 
-# saveRDS(t2, file = "t2legal.rds")
-# 
-# stats <- readRDS(file = "legalTerminology.rds")
-```
+# ```{r}
+# # saveRDS(stats, file = "legalTerminology.rds")
+# # 
+# # saveRDS(t2, file = "t2legal.rds")
+# # 
+# # stats <- readRDS(file = "legalTerminology.rds")
+# ```
 
