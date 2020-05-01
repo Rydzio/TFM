@@ -20,7 +20,7 @@ library(readtext)
 
 hilos = 8
 
-font_import()
+#font_import()
 
 #Ruta de trabajo
 setwd("~/TFM")
@@ -103,7 +103,7 @@ tic()
 x <- udpipe(tDocs, path, parallel.cores = hilos)
 toc()
 
-#saveRDS(x, file = "airbus.rds")
+saveRDS(x, file = "termExtraction/udpipeEspañol1.rds")
 #x <- readRDS(file = "airbus.rds")
 ```
 

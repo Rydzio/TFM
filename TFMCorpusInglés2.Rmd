@@ -1,0 +1,310 @@
+---
+title: "Extraccion de terminos TFM"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+Leemos los documentos.
+```{r echo=FALSE}
+library(readtext)
+
+hilos = 8
+
+font_import()
+
+#Ruta de trabajo
+setwd("~/TFM")
+
+ruta = "/legalcorpuses*"
+#ruta = "/../InnoSpace/data/corpus_data/Airbus/raw/documents*"
+#ruta = "/../InnoSpace/data/corpus_data/BibliotecaJuridicaDigital/raw/documents*"
+#ruta = "/../InnoSpace/data/corpus_data/covid19/raw/documents*"
+
+#Leer un corpus
+docs <- readtext(paste0(getwd(), ruta, "*"), #Leo todo lo que tenga ese path
+                 #docvarsfrom = "filenames", 
+                 #docvarnames = c("document", "language"),
+                 #dvsep = "_", 
+                 encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
+                 verbosity = 0) 
+
+print("Se han leido los documentos del corpus con éxito")
+
+```
+
+
+Creamos el corpus de quanteda
+```{r}
+library(quanteda)
+
+# create quanteda corpus
+quanteda_options(threads = hilos)
+quancorpusDocs <- corpus(docs)
+
+#Obtenemos un resumen del corpus que hemops creado
+summ <- summary(quancorpusDocs,    #Esto tarda unos segundos. Types es el num de tokens Únicos.
+                n = nrow(docs))    #Por defecto son 100
+sum(summ$Sentences)
+sum(summ$Tokens)
+
+#Puedo sacar los textos 
+tDocs <- texts(quancorpusDocs) #No tarda nada. 
+                       #Un vector nombrado (cada elemento tiene el nombre del doc). 
+                       #Cada elemento es una cadena con el texto del doc.
+```
+
+
+Descargamos el modelo udpipe de Google y extraemos los terminos.
+```{r}
+#library(udpipe)
+#library(tictoc)
+
+
+#Descargamos el modelo que deseamos utilzar
+#model <- udpipe_download_model(language = "spanish") #Only first time to get the .udpipe file
+#udmodel_spanish_gsd <- udpipe_load_model(file = 'spanish-gsd-ud-2.4-190531.udpipe')
+
+#tic()
+#Se podría PARALELIZAR. Mira https://cran.r-project.org/web/packages/udpipe/vignettes/udpipe-parallel.html
+#s <- udpipe_annotate(udmodel_spanish_gsd, 
+                     #tokenizer = "tokenizer". El que tiene udpipes por defecto. Otras opciones en http://ufal.mff.cuni.cz/udpipe/users-manual 
+                     #tagger = "default".  El POS taggin y lematizaciÃ³n por defecto de udpipes. TambiÃ©n puede ser "none" o lo que dice en http://ufal.mff.cuni.cz/udpipe/users-manual   
+                     #parser = "default". El dependency parsing que tiene udpipes por defecto. TambiÃ©n puede ser "none" o lo que dice en http://ufal.mff.cuni.cz/udpipe/users-manual   
+#                     trace = TRUE,#Por defecto es FALSE. Muestra el progreso de la anotaciÃ³n.
+#                     t2) #Tarda
+
+#toc()
+
+#x <- data.frame(s) #Tarda unos minutos
+#save(x, file="x.df.udpipeanno.es.saved") #Lo cargo con load("x.df.udpipeanno.saved")
+#load("x.df.udpipeanno.es.saved")
+```
+
+```{r}
+library(udpipe)
+library(tictoc)
+
+model <- udpipe_download_model(language = "spanish")
+#udmodel_spanish_gsd <- udpipe_load_model(file = 'spanish-gsd-ud-2.4-190531.udpipe')
+
+path <- model$file_model
+
+tic()
+x <- udpipe(tDocs, path, parallel.cores = hilos)
+toc()
+
+#saveRDS(x, file = "airbus.rds")
+#x <- readRDS(file = "airbus.rds")
+```
+
+
+
+```{r}
+library(lattice)
+
+#Plotting Part-of-speech tags from the given text
+
+stats <- txt_freq(x$upos) #upos = universal part of speech
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = stats, col = "yellow", 
+         main = "UPOS (Universal Parts of Speech)\n frequency of occurrence", 
+         xlab = "Freq")
+```
+
+
+
+```{r}
+stats <- subset(x, upos %in% "NOUN")
+stats <- txt_freq(x = stats$lemma)
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = head(stats, 30), col = "cadetblue", main = "Most occurring nouns", xlab = "Freq")
+```
+
+
+
+```{r}
+stats <- subset(x, upos %in% c("VERB")) 
+stats <- txt_freq(stats$token)# tambiÃ©n puedo poner lemma si quiero ver el verbo en infinitivo
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = head(stats, 20), col = "gold", 
+         main = "Most occurring Verbs", xlab = "Freq")
+```
+
+
+
+```{r}
+stats <- subset(x, upos %in% c("VERB")) 
+stats <- txt_freq(stats$lemma)# el lemma para el verbo en infinitivo
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = head(stats, 20), col = "gold", 
+         main = "Most occurring Verbs (lemma)", xlab = "Freq")
+```
+
+
+
+```{r}
+## Collocation (words following one another)
+stats <- keywords_collocation(x = x, 
+                             term = "token", group = c("doc_id", "paragraph_id", "sentence_id"),
+                             ngram_max = 4)
+## Co-occurrences: How frequent do words occur in the same sentence, in this case only nouns or adjectives
+stats <- cooccurrence(x = subset(x, upos %in% c("NOUN", "ADJ")), 
+                     term = "lemma", group = c("doc_id", "paragraph_id", "sentence_id"))
+## Co-occurrences: How frequent do words follow one another
+stats <- cooccurrence(x = x$lemma, 
+                     relevant = x$upos %in% c("NOUN", "ADJ"))
+## Co-occurrences: How frequent do words follow one another even if we would skip 2 words in between
+stats <- cooccurrence(x = x$lemma, 
+                     relevant = x$upos %in% c("NOUN", "ADJ"), skipgram = 2)
+head(stats)
+```
+
+
+
+```{r}
+library(igraph)
+library(ggraph)
+library(ggplot2)
+library(extrafont)
+
+wordnetwork <- head(stats, 30)
+wordnetwork <- graph_from_data_frame(wordnetwork)
+ggraph(wordnetwork, layout = "fr") +
+  geom_edge_link(aes(width = cooc, edge_alpha = cooc), edge_colour = "pink") +
+  geom_node_text(aes(label = name), col = "darkgreen", size = 4) +
+  theme_graph(base_family = "Arial Narrow") +
+  theme(legend.position = "none") +
+  labs(title = "Cooccurrences within 3 words distance", subtitle = "Nouns & Adjective")
+```
+
+
+
+```{r warning=FALSE}
+library(textrank)
+stats <- textrank_keywords(x$lemma, 
+                          relevant = x$upos %in% c("NOUN", "ADJ"), 
+                          ngram_max = 8, sep = " ")
+stats <- subset(stats$keywords, ngram > 1 & freq >= 5)
+library(wordcloud)
+suppressWarnings(wordcloud(words = stats$keyword, freq = stats$freq))
+```
+
+
+
+```{r}
+stats <- keywords_rake(x = x, 
+                       term = "lemma", 
+                       group = "doc_id", 
+                       relevant = x$upos %in% c("NOUN", "ADJ"))
+stats$key <- factor(stats$keyword, levels = rev(stats$keyword))
+barchart(key ~ rake, 
+         data = head(subset(stats, freq > 20), 60), 
+         col = "red", 
+         main = "Keywords identified by RAKE", 
+         xlab = "Rake")
+```
+
+
+Patrón 1
+```{r}
+x$phrase_tag <- as_phrasemachine(x$upos, 
+                                 type = "upos" #Puede ser tambiÃ©n "penn-treebank"
+                                )#Convierte los tags de upos a phrasemachine (Handler 2016). 
+
+stats2 <- keywords_phrases(x = x$phrase_tag, 
+                          term = tolower(x$token), 
+                          pattern = "(A|N)*N(P+D*(A|N)*N)*", #Default simple noun phrase. See manual.
+                          #pattern = "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)", #From manual. Noun phrase with coordination conjuction. Este patrón es capaz de extraer ligeramente mas cantidad de terminos, pero tambien tarda una cantidad de tiempo mayor.
+                          #See also this package to know who/why and how is a full noun phrase.
+                          #MÃ¡s abajo estÃ¡n los ejemplos del manual pdf de esta funciÃ³n.
+                          #AquÃ� se explica el pattern: (1) http://brenocon.com/oconnor_textasdata2016.pdf (slides informales)
+                          #                            (2) https://www.aclweb.org/anthology/W16-5615.pdf  (paper duro y fullNP grammar en el apÃ©ndice del paper) 
+                          is_regex = TRUE, 
+                          #ngram_max. Por defecto es 8. It is an integer indicating to allow phrases to be found up to ngram maximum number of terms following each other. Only used if is_regex is set to TRUE.
+                          #sep = " ". Character indicating how to collapse the phrase of terms which are found. Defaults to using a space.
+                          detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
+                                          #With TRUE you get keyword, ngran, pattern, start, end
+                                          #With FALSE you get keyword, ngram, freq, key
+                         )
+```
+
+
+Patrón 2
+```{r}
+x$phrase_tag <- as_phrasemachine(x$upos, 
+                                 type = "upos" #Puede ser tambiÃ©n "penn-treebank"
+                                )#Convierte los tags de upos a phrasemachine (Handler 2016). 
+
+stats3  <- keywords_phrases(x = x$phrase_tag, 
+                          term = tolower(x$token), 
+                          #pattern = "(A|N)*N(P+D*(A|N)*N)*", #Default simple noun phrase. See manual.
+                          pattern = "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)", #From manual. Noun phrase with coordination conjuction
+                          #See also this package to know who/why and how is a full noun phrase.
+                          #MÃ¡s abajo estÃ¡n los ejemplos del manual pdf de esta funciÃ³n.
+                          #AquÃ� se explica el pattern: (1) http://brenocon.com/oconnor_textasdata2016.pdf (slides informales)
+                          #                            (2) https://www.aclweb.org/anthology/W16-5615.pdf  (paper duro y fullNP grammar en el apÃ©ndice del paper) 
+                          is_regex = TRUE, 
+                          #ngram_max. Por defecto es 8. It is an integer indicating to allow phrases to be found up to ngram maximum number of terms following each other. Only used if is_regex is set to TRUE.
+                          #sep = " ". Character indicating how to collapse the phrase of terms which are found. Defaults to using a space.
+                          detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
+                                          #With TRUE you get keyword, ngran, pattern, start, end
+                                          #With FALSE you get keyword, ngram, freq, key
+                         )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Otros patrones
+<!-- # ```{r} -->
+<!-- # x$phrase_tag <- as_phrasemachine(x$upos,  -->
+<!-- #                                  type = "upos" #Puede ser tambiÃ©n "penn-treebank" -->
+<!-- #                                 )#Convierte los tags de upos a phrasemachine (Handler 2016).  -->
+<!-- #  -->
+<!-- # stats5  <- keywords_phrases(x = x$phrase_tag,  -->
+<!-- #                           term = tolower(x$token),  -->
+<!-- #                           #pattern = "(A|N)*N(P+D*(A|N)*N)*", #Default simple noun phrase. See manual. -->
+<!-- #                           #pattern = "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)", #From manual. Noun phrase with coordination conjuction -->
+<!-- #                           #pattern =  "((A|N)*N(P+D*(A|N)*N)*P*(M|V)*V(M|V)*|(M|V)*V(M|V)*D*(A|N)*N(P+D*(A|N)*N)*|(M|V)*V(M|V)*(P+D*(A|N)*N)+|(A|N)*N(P+D*(A|N)*N)*P*((M|V)*V(M|V)*D*(A|N)*N(P+D*(A|N)*N)*|(M|V)*V(M|V)*(P+D*(A|N)*N)+))" # Simple verb Phrase -->
+<!-- #                           pattern = "(((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)(P(CP)*)*(M(CM)*|V)*V(M(CM)*|V)*(C(M(CM)*|V)*V(M(CM)*|V)*)*|(M(CM)*|V)*V(M(CM)*|V)*(C(M(CM)*|V)*V(M(CM)*|V)*)*(D(CD)*)*((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)|(M(CM)*|V)*V(M(CM)*|V)*(C(M(CM)*|V)*V(M(CM)*|V)*)*((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)+|((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)(P(CP)*)*((M(CM)*|V)*V(M(CM)*|V)*(C(M(CM)*|V)*V(M(CM)*|V)*)*(D(CD)*)*((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)|(M(CM)*|V)*V(M(CM)*|V)*(C(M(CM)*|V)*V(M(CM)*|V)*)*((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)+))", # Verb phrase with coordination conjuction -->
+<!-- #                           #See also this package to know who/why and how is a full noun phrase. -->
+<!-- #                           #MÃ¡s abajo estÃ¡n los ejemplos del manual pdf de esta funciÃ³n. -->
+<!-- #                           #AquÃ� se explica el pattern: (1) http://brenocon.com/oconnor_textasdata2016.pdf (slides informales) -->
+<!-- #                           #                            (2) https://www.aclweb.org/anthology/W16-5615.pdf  (paper duro y fullNP grammar en el apÃ©ndice del paper)  -->
+<!-- #                           is_regex = TRUE,  -->
+<!-- #                           #ngram_max. Por defecto es 8. It is an integer indicating to allow phrases to be found up to ngram maximum number of terms following each other. Only used if is_regex is set to TRUE. -->
+<!-- #                           #sep = " ". Character indicating how to collapse the phrase of terms which are found. Defaults to using a space. -->
+<!-- #                           detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE. -->
+<!-- #                                           #With TRUE you get keyword, ngran, pattern, start, end -->
+<!-- #                                           #With FALSE you get keyword, ngram, freq, key -->
+<!-- #                          ) -->
+<!-- # ``` -->
+
+# ```{r}
+# # saveRDS(stats, file = "legalTerminology.rds")
+# # 
+# # saveRDS(t2, file = "t2legal.rds")
+# # 
+# # stats <- readRDS(file = "legalTerminology.rds")
+# ```
+
