@@ -18,17 +18,17 @@ Leemos los documentos.
 ```{r echo=FALSE}
 library(readtext)
 
-hilos = 8
+hilos = 16
 
-font_import()
+#font_import()
 
 #Ruta de trabajo
 setwd("~/TFM")
 
-ruta = "/legalcorpuses*"
+#ruta = "/legalcorpuses*"
 #ruta = "/../InnoSpace/data/corpus_data/Airbus/raw/documents*"
 #ruta = "/../InnoSpace/data/corpus_data/BibliotecaJuridicaDigital/raw/documents*"
-#ruta = "/../InnoSpace/data/corpus_data/covid19/raw/documents*"
+ruta = "/../InnoSpace/data/corpus_data/covid19/raw/documents*"
 
 #Leer un corpus
 docs <- readtext(paste0(getwd(), ruta, "*"), #Leo todo lo que tenga ese path
@@ -52,10 +52,10 @@ quanteda_options(threads = hilos)
 quancorpusDocs <- corpus(docs)
 
 #Obtenemos un resumen del corpus que hemops creado
-summ <- summary(quancorpusDocs,    #Esto tarda unos segundos. Types es el num de tokens Únicos.
-                n = nrow(docs))    #Por defecto son 100
-sum(summ$Sentences)
-sum(summ$Tokens)
+# summ <- summary(quancorpusDocs,    #Esto tarda unos segundos. Types es el num de tokens Únicos.
+#                 n = nrow(docs))    #Por defecto son 100
+# sum(summ$Sentences)
+# sum(summ$Tokens)
 
 #Puedo sacar los textos 
 tDocs <- texts(quancorpusDocs) #No tarda nada. 
@@ -94,7 +94,7 @@ Descargamos el modelo udpipe de Google y extraemos los terminos.
 library(udpipe)
 library(tictoc)
 
-model <- udpipe_download_model(language = "spanish")
+model <- udpipe_download_model(language = "english")
 #udmodel_spanish_gsd <- udpipe_load_model(file = 'spanish-gsd-ud-2.4-190531.udpipe')
 
 path <- model$file_model
@@ -103,7 +103,7 @@ tic()
 x <- udpipe(tDocs, path, parallel.cores = hilos)
 toc()
 
-#saveRDS(x, file = "airbus.rds")
+saveRDS(x, file = "termExtraction/covid.rds")
 #x <- readRDS(file = "airbus.rds")
 ```
 
