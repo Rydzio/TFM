@@ -1,6 +1,7 @@
 ---
 title: "Extraccion de terminos TFM"
-output: html_notebook
+output:
+  pdf_document: default
 ---
 
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
@@ -20,14 +21,8 @@ library(readtext)
 
 hilos = 16
 
-#font_import()
-
-#Ruta de trabajo
 setwd("~/TFM")
 
-#ruta = "/legalcorpuses*"
-#ruta = "/../InnoSpace/data/corpus_data/Airbus/raw/documents*"
-#ruta = "/../InnoSpace/data/corpus_data/BibliotecaJuridicaDigital/raw/documents*"
 ruta = "/../InnoSpace/data/corpus_data/covid19/raw/documents*"
 
 #Leer un corpus
@@ -35,7 +30,7 @@ docs <- readtext(paste0(getwd(), ruta, "*"), #Leo todo lo que tenga ese path
                  #docvarsfrom = "filenames", 
                  #docvarnames = c("document", "language"),
                  #dvsep = "_", 
-                 encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
+                 #encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
                  verbosity = 0) 
 
 print("Se han leido los documentos del corpus con éxito")
@@ -65,31 +60,6 @@ tDocs <- texts(quancorpusDocs) #No tarda nada.
 
 
 Descargamos el modelo udpipe de Google y extraemos los terminos.
-```{r}
-#library(udpipe)
-#library(tictoc)
-
-
-#Descargamos el modelo que deseamos utilzar
-#model <- udpipe_download_model(language = "spanish") #Only first time to get the .udpipe file
-#udmodel_spanish_gsd <- udpipe_load_model(file = 'spanish-gsd-ud-2.4-190531.udpipe')
-
-#tic()
-#Se podría PARALELIZAR. Mira https://cran.r-project.org/web/packages/udpipe/vignettes/udpipe-parallel.html
-#s <- udpipe_annotate(udmodel_spanish_gsd, 
-                     #tokenizer = "tokenizer". El que tiene udpipes por defecto. Otras opciones en http://ufal.mff.cuni.cz/udpipe/users-manual 
-                     #tagger = "default".  El POS taggin y lematizaciÃ³n por defecto de udpipes. TambiÃ©n puede ser "none" o lo que dice en http://ufal.mff.cuni.cz/udpipe/users-manual   
-                     #parser = "default". El dependency parsing que tiene udpipes por defecto. TambiÃ©n puede ser "none" o lo que dice en http://ufal.mff.cuni.cz/udpipe/users-manual   
-#                     trace = TRUE,#Por defecto es FALSE. Muestra el progreso de la anotaciÃ³n.
-#                     t2) #Tarda
-
-#toc()
-
-#x <- data.frame(s) #Tarda unos minutos
-#save(x, file="x.df.udpipeanno.es.saved") #Lo cargo con load("x.df.udpipeanno.saved")
-#load("x.df.udpipeanno.es.saved")
-```
-
 ```{r}
 library(udpipe)
 library(tictoc)
