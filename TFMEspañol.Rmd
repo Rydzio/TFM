@@ -1,7 +1,6 @@
 ---
 title: "Extraccion de terminos TFM"
-output:
-  pdf_document: default
+output: pdf_document
 ---
 
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
