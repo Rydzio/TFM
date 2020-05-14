@@ -28,15 +28,16 @@ hilos = 8
 #Ruta de trabajo
 setwd("~/TFM")
 
-ruta = "/legalcorpuses*"
+#ruta = "/legalcorpuses*"
+ruta = "/Users/pedrohv/TFM/TerminologíasInteractivas/data/covid19/raw/documents"
 
 #Leer un corpus
-docs <- readtext(paste0(getwd(), ruta, "*"), #Leo todo lo que tenga ese path
+docs <- readtext(paste0(ruta, "*"), #Leo todo lo que tenga ese path
                  #docvarsfrom = "filenames", 
                  #docvarnames = c("document", "language"),
                  #dvsep = "_", 
                  encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
-                 verbosity = 0) 
+                 verbosity = 3) 
 
 print("Se han leido los documentos del corpus con éxito")
 

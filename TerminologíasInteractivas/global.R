@@ -15,6 +15,10 @@ library(data.table)
 library(zoo)
 library(shinyWidgets)
 library(shinyjs)
+library(tools)
+
+library(udpipe)
+
 
 setwd("~/TFM/TerminologíasInteractivas")
 # setwd("/srv/shiny-server/InnoSpace")
@@ -34,28 +38,28 @@ currentCorpus <- substr(config_file[5], 9, nchar(config_file[5]))
 corpusPath <- paste0(getwd(), "/data/corpus_data/", currentCorpus)
 
 statistics <- list()
-corpus <- readRDS(paste0(corpusPath, "/processed/corpus/corpus.rds"))
-corpusTokens <- readRDS(paste0(corpusPath, "/processed/corpus/corpusTokens.rds"))
-corpusPagesTokens <- readRDS(paste0(corpusPath, "/processed/corpus/corpusPagesTokens.rds"))
+#corpus <- readRDS(paste0(corpusPath, "/processed/corpus/corpus.rds"))
+#corpusTokens <- readRDS(paste0(corpusPath, "/processed/corpus/corpusTokens.rds"))
+#corpusPagesTokens <- readRDS(paste0(corpusPath, "/processed/corpus/corpusPagesTokens.rds"))
 tableTerms <<- readRDS(paste0(corpusPath, "/processed/terminology/terminology.rds"))
 listChangesTerms <<- readRDS(paste0(corpusPath, "/processed/terminology/terminologyChanges.rds"))
 dtMetadata <<- readRDS(paste0(corpusPath, "/processed/corpus/metadata.rds"))
 
 
-documents <- corpusPagesTokens
-indexPage <- regexpr(pattern = '@Page', documents, fixed = TRUE)
-documents <- substring(documents, 1, indexPage)
-documents <- substring(documents, 1, nchar(documents)-1)
-uniqueDocuments <- unique(documents)
+#documents <- corpusPagesTokens
+# indexPage <- regexpr(pattern = '@Page', documents, fixed = TRUE)
+# documents <- substring(documents, 1, indexPage)
+# documents <- substring(documents, 1, nchar(documents)-1)
+# uniqueDocuments <- unique(documents)
+# 
+# #tokens <- as.list(corpusTokens)
+# #numberTokens <- sum(unlist(lapply(tokens, length)))
+# 
+# statistics["NumberDocuments"] <- as.character(length(uniqueDocuments))
 
-tokens <- as.list(corpusTokens)
-numberTokens <- sum(unlist(lapply(tokens, length)))
+#statistics["NumberPages"] <- summary(corpusPagesTokens)[1]
 
-statistics["NumberDocuments"] <- as.character(length(uniqueDocuments))
-
-statistics["NumberPages"] <- summary(corpusPagesTokens)[1]
-
-statistics["NumberTokens"] <- as.character(numberTokens)
+#statistics["NumberTokens"] <- as.character(numberTokens)
 
 termsList <<- tableTerms$Terminos
 
@@ -64,7 +68,7 @@ reactiveListTerm <<- reactiveValues(data = termsList)
 reactiveCorpusList <<- reactiveValues(data = corpusList)
 reactiveCurrentCorpus <<- reactiveValues(data = currentCorpus)
 
-quantokSession <- corpusTokens
-quantokPagesSession <- corpusPagesTokens
+#quantokSession <- corpusTokens
+#quantokPagesSession <- corpusPagesTokens
 statisticsSession <- statistics
 corpusPathSession <- corpusPath

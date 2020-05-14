@@ -16,33 +16,25 @@
 #     the system.
 #-------------------------------------------------------------
 
-createCorpus <- function(path_of_data_raw, nameCorpus, nThreads, imagesFlag = TRUE){
+createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, imagesFlag = TRUE){
   
   #Creacion de directorios para el corpus
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed"))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/raw"))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed", "/corpus"))
-  dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed", "/doc_images"))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed", "/terminology"))
-  saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminology.rds"))
-  saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyChanges.rds"))
   
   #Variables
-  corpus_raw = data.frame()
-  hilosDeProcesamiento = nThreads
+  hilos = nThreads
   
-  # Listamos todos los documentos de la ruta de los datos
-  files <- list.files(path=path_of_data_raw, 
-                      pattern = glob2rx("*.pdf"), #Solo pdfs. En el directorio puede haber otras cosas ;-)
-                      full.names = TRUE, 
-                      recursive = TRUE)
+  print(ruta)
   
-  #Generamos los metadatos de los documentos para almacenarlos en las estadisticas (unos 2 segundos)
-  print("getting pdf metadata... ")
-  file.info(files) -> sizes
-  sizes %>% select(size) -> sizes
-  sizes[] <- lapply(sizes, function(x) {
+  files <- list.files(ruta, full.names = TRUE, recursive = TRUE)
+  sizes <- file.info(files)
+  sizes <- sizes %>% select(size)
+  
+  sizes[] <- lapply(sizes, function(x){
     if(is.factor(x)) as.numeric(as.character(x)) else x
   })
   sapply(sizes, class)
@@ -52,93 +44,102 @@ createCorpus <- function(path_of_data_raw, nameCorpus, nThreads, imagesFlag = TR
   ) -> sizes
   
   sizes$TamañoMB / 1000000 -> sizes$TamañoMB
+  
   metadata <- data.frame()
   
-  posindex = 1
-  print("Reading documents")
-  #Bucle por cada documentos
   for (x in files){
     #Obtenemos el nombre del documento
     filepath <- strsplit(x, "/")
     fname <- filepath[[1]][length(filepath[[1]])]
     cat(fname, "\n")
     #Leemos el documento (Lista de paginas (identificador), y su texto asociado)
-    pdf_text(paste(x,sep = "")) -> document_text
-    
-    
-    
-    pageindex = 1
-    #Por cada pagina del documento
-    for (y in document_text){
-      #añadimos los identificadores de cada pagina de un documento, y su texto asocidado en un string
-      document <- data.frame("title" = fname, "page" = paste0("Page", pageindex), "pos" = paste0("Pos", posindex), "text" = toString(y), stringsAsFactors = FALSE)
-      pageindex <- pageindex + 1
-      posindex <- posindex + 1
+    if(file_ext(fname) == "pdf" || file_ext(fname) == "PDF"){
+      pdf_info(paste(x,sep = "")) -> info
       
-      colnames(document) <- c("title", "page", "pos", "text")
-      #Añadimos la información al corpus que contiene todos los datos leidos hasta ahora
-      corpus_raw <- rbind(corpus_raw,document) 
+      info$pages -> pages
+      info$created -> created
+      info$modified -> modified
+      info$key -> key
       
+    }else{
+      pages = "NA"
+      created = "NA"
+      modified = "NA"
+      key = "NA"
     }
-    #mETADATOS E INFORMACIÓN DE LOS PDF
-    pdf_info(paste(x,sep = "")) -> info
-    unlist(info$key) -> unlisted
-    documentInfo <- data.frame("Nombre" = fname, "Pag" = info$pages , "Creacion" = info$created, "Modif" = info$modified , "Datos" = toString(unlist(info$key)), stringsAsFactors = FALSE)
-    metadata <<- rbind(metadata,documentInfo) 
     
-    cat("Tamaño del corpus: ",object.size(corpus_raw)/1000000," MB \n")
+    documentInfo <- data.frame("Nombre" = fname, "Pag" = toString(pages) , "Creacion" = as.character(created), "Modif" = as.character(modified) , "Datos" = toString(unlist(key)), stringsAsFactors = FALSE)
+    
+    metadata <- rbind(metadata,documentInfo) 
+    
   }
-  print("Building teh metadata from corpus")
+  
   cbind(sizes$TamañoMB, metadata) -> metadata
+  
   metadata %>%  rename(
     TamañoMB = 'sizes$TamañoMB',
   ) -> metadata
   
-  saveRDS(metadata, paste0(getwd(),"/data/corpus_data" ,path_of_data,"/processed/corpus/metadata.rds"))
+  saveRDS(metadata, paste0(getwd(),"/data/corpus_data/" ,nameCorpus,"/processed/corpus/metadata.rds"))
   
+  #Leer un corpus
+  docs <- readtext(paste0(ruta, "*"), #Leo todo lo que tenga ese path
+                   #docvarsfrom = "filenames", 
+                   #docvarnames = c("document", "language"),
+                   #dvsep = "_", 
+                   #encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
+                   verbosity = 3) 
   
-  print("Making corpus from data using quanteda...")
-  quanteda_options(threads = hilosDeProcesamiento)
-  corpus <- corpus(corpus_raw)
-  doc_id <- paste(corpus_raw$title, corpus_raw$page, corpus_raw$pos, sep = "@")
-  docnames(corpus) <- doc_id
+  # create quanteda corpus
+  quanteda_options(threads = hilos)
+  quancorpusDocs <- corpus(docs)
   
-  corpusTokens <- tokens(corpus)
-  corpusPagesTokens <- doc_id
+  #Puedo sacar los textos 
+  tDocs <- texts(quancorpusDocs) #No tarda nada. 
   
-  saveRDS(corpus, paste0(getwd(),"/data/corpus_data/" , nameCorpus, "/processed/corpus/corpus.rds"))
-  saveRDS(corpusTokens, paste0(getwd(),"/data/corpus_data/" , nameCorpus, "/processed/corpus/corpusTokens.rds"))
-  saveRDS(corpusPagesTokens, paste0(getwd(),"/data/corpus_data/" , nameCorpus, "/processed/corpus/corpusPagesTokens.rds"))
+  model <- udpipe_download_model(language = "spanish")
+  #udmodel_spanish_gsd <- udpipe_load_model(file = 'spanish-gsd-ud-2.4-190531.udpipe')
   
-  if(imagesFlag == TRUE) {
-    #PARTE 2: GENERA IMAGENES Y METADATOS DE CADA PDF
-    cat("Generando metadatos e imagenes \n")
-    
-    posindex = 1
-    for (x in files){
-      
-      info <- pdf_info(x)
-      numPags <- info$pages
-      
-      txtboxes <- pdf_data(x)
-      
-      filepath <- strsplit(x, "/")
-      fname <- filepath[[1]][length(filepath[[1]])]
-      print(fname)
-      fname <- substring(fname, 1, nchar(fname)-4)
-      
-      dir.create(paste0(getwd(),"/data/corpus_data/" , nameCorpus, "/processed/doc_images/", fname))
-      saveRDS(txtboxes, paste0(getwd(),"/data/corpus_data/" , nameCorpus, "/processed/doc_images/", fname, "/", fname, ".rds"))
-      
-      counterPage <- 1
-      while(counterPage <= numPags) {
-        bitmap <- pdf_render_page(x,
-                                  dpi = 90,
-                                  page = counterPage)
-        png::writePNG(bitmap,
-                      paste0(getwd(),"/data/corpus_data/" , nameCorpus, "/processed/doc_images/", fname, "/page", as.character(counterPage), ".png"))
-        counterPage <- counterPage + 1
-      }
-    }
+  path <- model$file_model
+  
+  tic()
+  x <- udpipe(tDocs, path, parallel.cores = hilos)
+  toc()
+  
+  x$phrase_tag <- as_phrasemachine(x$upos, 
+                                   type = "upos" #Puede ser tambiÃ©n "penn-treebank"
+  )
+  
+  terminology <- data.frame(Terminos = subset(x, select=c("token")), Autor = c(rep("Orignial", nrow(x))), Fecha = c(rep(Sys.Date(), nrow(x))))
+  terminology <- unique(terminology)
+  
+  if(paternType == "upos"){
+    stats <<- keywords_phrases(x = x$upos, 
+                               term = tolower(x$token), 
+                               pattern = patr,
+                               is_regex = TRUE, 
+                               detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
+    )
+  } else if(paternType == "pos"){
+    stats <<- keywords_phrases(x = x$phrase_tag, 
+                               term = tolower(x$token), 
+                               pattern = patr,
+                               is_regex = TRUE,
+                               detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
+    )
+  } else {
+    stats <<- keywords_rake(x = x, 
+                           term = "lemma", 
+                           group = "doc_id", 
+                           relevant = x$upos %in% c("NOUN", "ADJ"))
   }
+  
+  saveRDS(terminology, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminology.rds"))
+  saveRDS(x, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyFull.rds"))
+  saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyChanges.rds"))
+  
+  saveRDS(stats, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyExtracted.rds"))
+  
+  print("FIN")
+  
 }

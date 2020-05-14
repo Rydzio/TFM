@@ -44,9 +44,8 @@ function(input, output, session) {
       for(directory in listaDirectorios) {
         path <- paste0(path, "/", directory)
       }
-      print(path)
-      print(nameCorpus)
-      createCorpus(path, nameCorpus, 4)
+      
+      createCorpus(path, nameCorpus, 16, input$patern, input$paternType)
       corpusList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/"), recursive = FALSE))
       reactiveCorpusList$data <<- corpusList
     }
@@ -110,30 +109,14 @@ function(input, output, session) {
     corpusPathSession <<- paste0(getwd(), "/data/corpus_data/", input$corpusOpt)
     
     statisticsSession <<- list()
-    corpus <- readRDS(paste0(corpusPathSession, "/processed/corpus/corpus.rds"))
-    quantokSession <<- readRDS(paste0(corpusPathSession, "/processed/corpus/corpusTokens.rds"))
-    quantokPagesSession <<- readRDS(paste0(corpusPathSession, "/processed/corpus/corpusPagesTokens.rds"))
-    
     
     tableTerms <<- readRDS(paste0(corpusPathSession, "/processed/terminology/terminology.rds"))
     listChangesTerms <<- readRDS(paste0(corpusPathSession, "/processed/terminology/terminologyChanges.rds"))
     
     dtMetadata <<- readRDS(paste0(corpusPathSession, "/processed/corpus/metadata.rds"))
     
-    documents <- quantokPagesSession
-    indexPage <- regexpr(pattern = '@Page', documents, fixed = TRUE)
-    documents <- substring(documents, 1, indexPage)
-    documents <- substring(documents, 1, nchar(documents)-1)
-    uniqueDocuments <- unique(documents)
-    
-    tokens <- as.list(quantokSession)
-    numberTokens <- sum(unlist(lapply(tokens, length)))
-    
-    statisticsSession["NumberDocuments"] <<- as.character(length(uniqueDocuments))
-    
-    statisticsSession["NumberPages"] <<- summary(quantokPagesSession)[1]
-    
-    statisticsSession["NumberTokens"] <<- as.character(numberTokens)
+    dtTermFull <<- readRDS(paste0(corpusPathSession, "/processed/terminology/terminologyFull.rds"))
+    dtTermExtracted <<- readRDS(paste0(corpusPathSession, "/processed/terminology/terminologyExtracted.rds"))
     
     termsList <<- tableTerms$Terminos
     
@@ -141,19 +124,19 @@ function(input, output, session) {
     reactiveListTerm$data <<- termsList
     reactiveCurrentCorpus$data <<- currentCorpus
     
+    #DATOS DE TERMINOLOGÍA
+    output$TermExtracted = DT::renderDataTable({
+      dtTermExtracted
+    })
+    
+    output$termFull = DT::renderDataTable({
+      dtTermFull
+    })
+    
     # Estadisticas básicas
     output$Metadata = DT::renderDataTable({
       dtMetadata
     })
-    
-    output$stat <- renderTable({
-      
-      statistics <- matrix(c(statisticsSession$NumberDocuments, statisticsSession$NumberPages, statisticsSession$NumberTokens), ncol = 1)
-      row.names(statistics) <- c ("Número de documentos", 
-                                  "Número total de páginas", "Número total de tokens")
-      
-      statistics
-    }, rownames = TRUE, colnames = FALSE)
     
     output$docSelected <- renderText({ input$corpusOpt })
     output$docAdd <- renderUI({
