@@ -110,8 +110,8 @@ createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, imagesFla
                                    type = "upos" #Puede ser tambiÃ©n "penn-treebank"
   )
   
-  terminology <- data.frame(Terminos = subset(x, select=c("token")), Autor = c(rep("Orignial", nrow(x))), Fecha = c(rep(Sys.Date(), nrow(x))))
-  terminology <- unique(terminology)
+  #terminology <- data.frame(Terminos = subset(x, select=c("token")), Autor = c(rep("Orignial", nrow(x))), Fecha = c(rep(Sys.Date(), nrow(x))))
+  #terminology <- unique(terminology)
   
   if(paternType == "upos"){
     stats <<- keywords_phrases(x = x$upos, 
@@ -133,6 +133,9 @@ createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, imagesFla
                            group = "doc_id", 
                            relevant = x$upos %in% c("NOUN", "ADJ"))
   }
+  
+  terminology <- data.frame(Terminos = subset(stats, select=c("keyword")), Autor = c(rep("Orignial", nrow(stats))), Fecha = c(rep(Sys.Date(), nrow(stats))))
+  terminology <- unique(terminology)
   
   saveRDS(terminology, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminology.rds"))
   saveRDS(x, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyFull.rds"))

@@ -25,7 +25,7 @@ function(input, output, session) {
     allowContains <<- input$allowContains
   })
   
-  observeEvent(input$dir, {
+  observeEvent(input$dirCreate, {
     if(input$nameCorp == "") {
       nameCorpus <- paste0("Corpus", as.character(sample(1:100000, 1)))
     } 

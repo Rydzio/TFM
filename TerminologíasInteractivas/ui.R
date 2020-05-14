@@ -61,7 +61,7 @@ fluidPage(
                                           dataTableOutput("dtTerminology")
                                )
                       ),
-                      tabPanel("Gestor de documentos", value = "add", icon = icon("folder-open"),
+                      tabPanel("Crear Terminología", value = "add", icon = icon("folder-open"),
                                #h2(strong("Gestor de documentos")),
                                h1("Seleccionar una terminología"),
                                fluidRow(
@@ -95,7 +95,8 @@ fluidPage(
                                           fluidRow(
                                             column(6, h5("Escriba el nombre de la nueva terminología")),
                                             column(6, textInput("nameCorp", label = NULL, placeholder = "Nombre de la nueva terminología"))),
-                                          fluidRow(column(12, shinyDirButton("dir", "Seleccionar documentos", "Seleccionar documentos")))
+                                          fluidRow(column(6, shinyDirButton("dir", "Seleccionar documentos", "Seleccionar documentos")),
+                                                   column(6, actionButton("dirCreate", label = "Crear", width = 'auto')))
                                         )
                                  )
                                ),
@@ -126,6 +127,7 @@ fluidPage(
                                wellPanel( style = "background: white",
                                           h4("Terminologia completa:"),
                                           dataTableOutput("termFull")
+                                          
                                )
                       ),
                       tags$head(tags$style(HTML('#search+ div>.selectize-input{min-width: 300px; max-width:100%; !important;}')))
