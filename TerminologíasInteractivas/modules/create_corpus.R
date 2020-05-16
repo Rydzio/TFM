@@ -16,20 +16,26 @@
 #     the system.
 #-------------------------------------------------------------
 
-createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, imagesFlag = TRUE){
+createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, idioma, imagesFlag = TRUE){
   
+  print("Creando Directorios: ")
+  
+  tic()
   #Creacion de directorios para el corpus
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed"))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/raw"))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed", "/corpus"))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed", "/terminology"))
+  toc()
   
   #Variables
   hilos = nThreads
   
+  print("Extrayendo metadatos: ")
   print(ruta)
   
+  tic()
   files <- list.files(ruta, full.names = TRUE, recursive = TRUE)
   sizes <- file.info(files)
   sizes <- sizes %>% select(size)
@@ -39,11 +45,7 @@ createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, imagesFla
   })
   sapply(sizes, class)
   
-  sizes %>%  rename(
-    TamañoMB = size,
-  ) -> sizes
-  
-  sizes$TamañoMB / 1000000 -> sizes$TamañoMB
+  sizes$size / 1000000 -> sizes$size
   
   metadata <- data.frame()
   
@@ -74,34 +76,39 @@ createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, imagesFla
     
   }
   
-  cbind(sizes$TamañoMB, metadata) -> metadata
+  cbind(sizes$size, metadata) -> metadata
   
-  metadata %>%  rename(
-    TamañoMB = 'sizes$TamañoMB',
-  ) -> metadata
+  colnames(metadata)[1] <- "TamañoMB"
   
   saveRDS(metadata, paste0(getwd(),"/data/corpus_data/" ,nameCorpus,"/processed/corpus/metadata.rds"))
+  toc()
   
-  #Leer un corpus
+  print("Leyendo Documentos: ")
+  tic()
   docs <- readtext(paste0(ruta, "*"), #Leo todo lo que tenga ese path
                    #docvarsfrom = "filenames", 
                    #docvarnames = c("document", "language"),
                    #dvsep = "_", 
                    #encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
-                   verbosity = 3) 
+                   verbosity = 0) 
+  toc()
   
+  print("Creando Corpus: ")
   # create quanteda corpus
+  tic()
   quanteda_options(threads = hilos)
   quancorpusDocs <- corpus(docs)
+  toc()
   
   #Puedo sacar los textos 
   tDocs <- texts(quancorpusDocs) #No tarda nada. 
   
-  model <- udpipe_download_model(language = "spanish")
+  model <- udpipe_download_model(language = idioma)
   #udmodel_spanish_gsd <- udpipe_load_model(file = 'spanish-gsd-ud-2.4-190531.udpipe')
   
   path <- model$file_model
   
+  print("Extrayendo Terminos: ")
   tic()
   x <- udpipe(tDocs, path, parallel.cores = hilos)
   toc()
@@ -113,6 +120,8 @@ createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, imagesFla
   #terminology <- data.frame(Terminos = subset(x, select=c("token")), Autor = c(rep("Orignial", nrow(x))), Fecha = c(rep(Sys.Date(), nrow(x))))
   #terminology <- unique(terminology)
   
+  print("Extrayendo Terminología: ")
+  tic()
   if(paternType == "upos"){
     stats <<- keywords_phrases(x = x$upos, 
                                term = tolower(x$token), 
@@ -135,12 +144,15 @@ createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, imagesFla
   }
   
   terminology <- data.frame(Terminos = subset(stats, select=c("keyword")), Autor = c(rep("Orignial", nrow(stats))), Fecha = c(rep(Sys.Date(), nrow(stats))))
-  terminology <- unique(terminology)
   
+  terminology <- ddply(terminology, .(keyword, Autor, Fecha), nrow)
+  colnames(terminology)[4] <- "Frecuencia"
+  toc()
+
+  saveRDS(quancorpusDocs, paste0(getwd(),"/data/corpus_data/" ,nameCorpus,"/processed/corpus/corpus.rds"))
   saveRDS(terminology, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminology.rds"))
   saveRDS(x, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyFull.rds"))
   saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyChanges.rds"))
-  
   saveRDS(stats, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyExtracted.rds"))
   
   print("FIN")

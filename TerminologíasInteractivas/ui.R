@@ -67,25 +67,59 @@ fluidPage(
                                fluidRow(
                                  column(6, 
                                         wellPanel(
-                                          fluidRow(radioGroupButtons("corpusOpt", label = h4(("Seleccione el Corpus sobre el que desea trabajar")), justified= TRUE, choices = corpusList, selected = currentCorpus, direction = "vertical")))
+                                          fluidRow(radioGroupButtons("corpusOpt", label = h4(("Seleccione el Corpus sobre el que desea trabajar")), justified= TRUE, choices = corpusList, selected = currentCorpus, direction = "vertical")),
+                                          # fluidRow(selectInput("corpusOpt", "Seleccione el Corpus sobre el que desea trabajar",
+                                          #                      choices = corpusList, selected = currentCorpus)),
+                                          )
                                  ),
-                                 column(6,
-                                        fluidRow(h4("El corpus seleccionado es: ", strong(textOutput("docSelected"))))
-                                        #fluidRow(fileInput("docAdd", label = "Añadir documentos", multiple = TRUE)),
-                                        # fluidRow(uiOutput("docAdd")),
-                                        # fluidRow(uiOutput("docDelText")),
-                                        # fluidRow(uiOutput("docDelBut"))
-                                        
+                                 column(6, align = "center",
+                                        wellPanel(
+                                        fluidRow(h4("El corpus seleccionado es: ")),
+                                        fluidRow(h2(strong(textOutput("docSelected"))))
+                                        )
                                  )
                                ), br(),
                                h1("Crear una nueva terminología"),
                                fluidRow(
                                  column(12,
                                         wellPanel(
-                                          selectInput("paternType", "Selecciona el tipo de patron:",
-                                                      c("POS" = "pos",
-                                                        "UPOS" = "upos",
-                                                        "RAKE" = "rake")),
+                                          fluidRow(
+                                            column(6,
+                                                   selectInput("paternType", "Selecciona el tipo de patron:",
+                                                               c("POS" = "pos",
+                                                                 "UPOS" = "upos",
+                                                               "RAKE" = "rake"))
+                                                   ),
+                                            column(6,
+                                                   selectInput("idioma", "Selecciona el idioma de los documentos introducidos:",
+                                                               c("afrikaans-afribooms",
+                                                                 "ancient_greek-perseus", "ancient_greek-proiel", "arabic-padt",
+                                                                 "armenian-armtdp", "basque-bdt", "belarusian-hse", "bulgarian-btb",
+                                                                 "buryat-bdt", "catalan-ancora", "chinese-gsd", "classical_chinese-kyoto",
+                                                                 "coptic-scriptorium", "croatian-set", "czech-cac", "czech-cltt",
+                                                                 "czech-fictree", "czech-pdt", "danish-ddt", "dutch-alpino",
+                                                                 "dutch-lassysmall", "english-ewt", "english-gum", "english-lines",
+                                                                 "english-partut", "estonian-edt", "estonian-ewt", "finnish-ftb",
+                                                                 "finnish-tdt",      "french-gsd", "french-partut", "french-sequoia",
+                                                                 "french-spoken", "galician-ctg", "galician-treegal", "german-gsd",
+                                                                 "gothic-proiel", "greek-gdt", "hebrew-htb", "hindi-hdtb", "hungarian-szeged",
+                                                                 "indonesian-gsd", "irish-idt", "italian-isdt", "italian-partut",
+                                                                 "italian-postwita", "italian-vit", "japanese-gsd", "kazakh-ktb", "korean-gsd",
+                                                                 "korean-kaist", "kurmanji-mg", "latin-ittb", "latin-perseus", "latin-proiel",
+                                                                 "latvian-lvtb", "lithuanian-alksnis", "lithuanian-hse", "maltese-mudt",
+                                                                 "marathi-ufal",      "north_sami-giella", "norwegian-bokmaal",
+                                                                 "norwegian-nynorsk", "norwegian-nynorsklia", "old_church_slavonic-proiel",
+                                                                 "old_french-srcmf", "old_russian-torot", "persian-seraji", "polish-lfg",
+                                                                 "polish-pdb", "polish-sz", "portuguese-bosque", "portuguese-br",
+                                                                 "portuguese-gsd", "romanian-nonstandard", "romanian-rrt", "russian-gsd",
+                                                                 "russian-syntagrus", "russian-taiga", "sanskrit-ufal", "serbian-set",
+                                                                 "slovak-snk", "slovenian-ssj", "slovenian-sst", "spanish-ancora",
+                                                                 "spanish-gsd", "swedish-lines", "swedish-talbanken",      "tamil-ttb",
+                                                                 "telugu-mtg", "turkish-imst", "ukrainian-iu", "upper_sorbian-ufal",
+                                                                 "urdu-udtb", "uyghur-udt", "vietnamese-vtb", "wolof-wtb"), selected = "spanish-gsd")
+                                                   )
+                                            
+                                            ),
                                           h5("Escriba el patrón que desea emplear para la extracción de terminos"),
                                           selectizeInput("patern", label = NULL, choices = c("(A|N)*N(P+D*(A|N)*N)*",
                                                                                              "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)",
@@ -117,18 +151,26 @@ fluidPage(
                                           dataTableOutput("Metadata")
                                )
                       ),
+                      tabPanel("Contextualizar", value = "context", icon = icon("quote-left"),
+                               h2("Ver terminos en contexto"),
+                               fluidRow(
+                                 column(6,
+                                        wellPanel( style = "background: white",
+                                                   h4("Tabla con los términos actuales:"),
+                                                   dataTableOutput("dtTermsRaw")
+                                        )
+                                 ),
+                                 column(6,
+                                        wellPanel( style = "background: white",
+                                                   h4("Tabla con los términos en contexto:"),
+                                                   dataTableOutput("dtTerms")
+                                        )
+                                 )
+                               )
+                      ),
                       tabPanel("Comparar Terminologías", value = "CompTerm", icon = icon("less-than"),
                                h5("Aquí irá el sistema comparativo de terminologías interactivo"),
                                
-                               wellPanel( style = "background: white",
-                                          h4("Terminologia Extraida: "),
-                                          dataTableOutput("TermExtracted")
-                               ),
-                               wellPanel( style = "background: white",
-                                          h4("Terminologia completa:"),
-                                          dataTableOutput("termFull")
-                                          
-                               )
                       ),
                       tags$head(tags$style(HTML('#search+ div>.selectize-input{min-width: 300px; max-width:100%; !important;}')))
   )))

@@ -45,7 +45,7 @@ function(input, output, session) {
         path <- paste0(path, "/", directory)
       }
       
-      createCorpus(path, nameCorpus, 16, input$patern, input$paternType)
+      createCorpus(path, nameCorpus, 16, input$patern, input$paternType, input$idioma)
       corpusList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/"), recursive = FALSE))
       reactiveCorpusList$data <<- corpusList
     }
@@ -114,6 +114,7 @@ function(input, output, session) {
     listChangesTerms <<- readRDS(paste0(corpusPathSession, "/processed/terminology/terminologyChanges.rds"))
     
     dtMetadata <<- readRDS(paste0(corpusPathSession, "/processed/corpus/metadata.rds"))
+    corp <<- readRDS(paste0(corpusPathSession, "/processed/corpus/corpus.rds"))
     
     dtTermFull <<- readRDS(paste0(corpusPathSession, "/processed/terminology/terminologyFull.rds"))
     dtTermExtracted <<- readRDS(paste0(corpusPathSession, "/processed/terminology/terminologyExtracted.rds"))
@@ -130,8 +131,20 @@ function(input, output, session) {
     })
     
     output$termFull = DT::renderDataTable({
-      dtTermFull
+      dtTermFull %>% select (1,4,9, 10, 11, 18)
     })
+    
+    #Contextualizar Terminologías
+    output$dtTermsRaw = DT::renderDataTable(
+      tableTerms,selection = 'single'
+    )
+    
+    observeEvent(input$dtTermsRaw_rows_selected, {
+      output$dtTerms = DT::renderDataTable({
+        kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1]))
+      })
+    })
+    
     
     # Estadisticas básicas
     output$Metadata = DT::renderDataTable({

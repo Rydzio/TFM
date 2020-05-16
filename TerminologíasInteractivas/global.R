@@ -16,6 +16,9 @@ library(zoo)
 library(shinyWidgets)
 library(shinyjs)
 library(tools)
+library(sos)
+library(dplyr)
+library(plyr)
 
 library(udpipe)
 
@@ -44,7 +47,7 @@ statistics <- list()
 tableTerms <<- readRDS(paste0(corpusPath, "/processed/terminology/terminology.rds"))
 listChangesTerms <<- readRDS(paste0(corpusPath, "/processed/terminology/terminologyChanges.rds"))
 dtMetadata <<- readRDS(paste0(corpusPath, "/processed/corpus/metadata.rds"))
-
+corp <<- readRDS(paste0(corpusPath, "/processed/corpus/corpus.rds"))
 
 #documents <- corpusPagesTokens
 # indexPage <- regexpr(pattern = '@Page', documents, fixed = TRUE)
