@@ -1,5 +1,0 @@
-Indicar el modo de la App: advanced (todas las opciones) / demo (inicio y búsqueda)
-
-Mode: demo
-
-Corpus: legal
