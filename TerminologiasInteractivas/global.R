@@ -30,6 +30,7 @@ source(paste0(getwd(), "/modules/get_document_path.R"))
 source(paste0(getwd(), "/modules/create_corpus.R"))
 source(paste0(getwd(), "/modules/add_documents.R"))
 
+hilos = 8
 
 # Read config file
 config_file <- readLines("config_file.txt") 

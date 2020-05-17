@@ -16,7 +16,7 @@
 #     the system.
 #-------------------------------------------------------------
 
-createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, idioma, imagesFlag = TRUE){
+createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, idioma, encoding, imagesFlag = TRUE){
   
   #Creacion de los directorios
   print("Creando Directorios: ")
@@ -69,12 +69,22 @@ createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, idioma, i
   #Lectura de documentos
   print("Leyendo Documentos: ")
   tic()
-  docs <- readtext(paste0(ruta, "*"), #Leo todo lo que tenga ese path
-                   #docvarsfrom = "filenames", 
-                   #docvarnames = c("document", "language"),
-                   #dvsep = "_", 
-                   #encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
-                   verbosity = 0) 
+  if(encoding == "Default"){
+    docs <- readtext(paste0(ruta, "*"), #Leo todo lo que tenga ese path
+                     #docvarsfrom = "filenames", 
+                     #docvarnames = c("document", "language"),
+                     #dvsep = "_", 
+                     #encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
+                     verbosity = 0)
+  } else {
+    print(encoding)
+    docs <- readtext(paste0(ruta, "*"), #Leo todo lo que tenga ese path
+                     #docvarsfrom = "filenames", 
+                     #docvarnames = c("document", "language"),
+                     #dvsep = "_", 
+                     encoding = encoding,
+                     verbosity = 0)
+  }
   toc()
   
   #Creacion de corpus quanteda

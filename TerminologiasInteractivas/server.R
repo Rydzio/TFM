@@ -45,7 +45,7 @@ function(input, output, session) {
         path <- paste0(path, "/", directory)
       }
       
-      createCorpus(path, nameCorpus, 16, input$patern, input$paternType, input$idioma)
+      createCorpus(path, nameCorpus, hilos, input$patern, input$paternType, input$idioma, input$encoding)
       corpusList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/"), recursive = FALSE))
       reactiveCorpusList$data <<- corpusList
     }
