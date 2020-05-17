@@ -19,7 +19,7 @@ function(input, output, session) {
     color = "transparent"
   )
   
-  shinyDirChoose(input, 'dir', roots = getVolumes())
+  shinyDirChoose(input, 'dir', roots = getVolumes()())#c(wd = '../../'))#
   
   observeEvent(input$allowContains, {
     allowContains <<- input$allowContains
