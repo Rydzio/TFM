@@ -5,6 +5,8 @@ library(waiter)
 library(rsvg)
 library(svgPanZoom)
 
+
+
 fluidPage(
   useShinyjs(),
   use_waiter(),
@@ -109,7 +111,8 @@ fluidPage(
                                             ),
                                           ),
                                           fluidRow(
-                                                   column(12, align = "center", actionButton("dirCreate", label = "Crear", width = 'auto'))
+                                                   column(12, align = "center", actionButton("dirCreate", label = "Crear", width = 'auto')),
+                                                   #add_busy_spinner(spin = "fading-circle")
                                           )
                                         )
                                  )

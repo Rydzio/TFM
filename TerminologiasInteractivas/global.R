@@ -19,6 +19,7 @@ library(tools)
 library(sos)
 library(dplyr)
 library(plyr)
+library(shinybusy)
 
 library(udpipe)
 

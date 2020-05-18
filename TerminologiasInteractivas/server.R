@@ -26,6 +26,7 @@ function(input, output, session) {
   })
   
   observeEvent(input$dirCreate, {
+    show_modal_spinner(text = "Creando Terminología...")
     if(input$nameCorp == "") {
       nameCorpus <- paste0("Corpus", as.character(sample(1:100000, 1)))
     } 
@@ -44,11 +45,11 @@ function(input, output, session) {
       for(directory in listaDirectorios) {
         path <- paste0(path, "/", directory)
       }
-      
       createCorpus(path, nameCorpus, hilos, input$patern, input$paternType, input$idioma, input$encoding)
       corpusList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/"), recursive = FALSE))
       reactiveCorpusList$data <<- corpusList
     }
+    remove_modal_spinner()
   })
   
   observeEvent(input$corpusDelBut, {
@@ -101,7 +102,7 @@ function(input, output, session) {
   
   observeEvent(input$corpusOpt, {
     #w$show()
-    
+    show_modal_spinner(text = "Cargando terminología...")
     saveRDS(tableTerms, paste0(corpusPathSession, "/processed/terminology/terminology.rds"))
     saveRDS(listChangesTerms, paste0(corpusPathSession, "/processed/terminology/terminologyChanges.rds"))
     
@@ -163,6 +164,7 @@ function(input, output, session) {
     output$docDelBut <- renderUI({
       actionButton("docDelBut", label = "Eliminar", width = 'auto')
     })
+    remove_modal_spinner()
   })
   
   observeEvent(input$docAdd, {
