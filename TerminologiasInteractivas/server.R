@@ -101,7 +101,6 @@ function(input, output, session) {
   )
   
   observeEvent(input$corpusOpt, {
-    #w$show()
     show_modal_spinner(text = "Cargando terminología...")
     saveRDS(tableTerms, paste0(corpusPathSession, "/processed/terminology/terminology.rds"))
     saveRDS(listChangesTerms, paste0(corpusPathSession, "/processed/terminology/terminologyChanges.rds"))

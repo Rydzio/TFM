@@ -5,3 +5,6 @@ termExtraction/*
 .DS_Store
 TerminologiasInteractivas/data/
 Terminolog\303\255asInteractivas/data/
+TerminologiasInteractivas/.Rhistory
+TerminologiasInteractivas/*.Rhistory
+TerminologiasInteractivas/*.RData

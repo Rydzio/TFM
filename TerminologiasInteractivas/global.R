@@ -25,7 +25,6 @@ library(udpipe)
 
 
 setwd("~/TFM/TerminologiasInteractivas")
-# setwd("/srv/shiny-server/InnoSpace")
 
 source(paste0(getwd(), "/modules/get_document_path.R"))
 source(paste0(getwd(), "/modules/create_corpus.R"))
