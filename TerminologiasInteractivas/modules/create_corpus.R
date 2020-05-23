@@ -16,14 +16,13 @@
 #     the system.
 #-------------------------------------------------------------
 
-createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, idioma, encoding, imagesFlag = TRUE){
+createCorpus <- function(ruta, nameCorpus, nThreads, encoding){
   
   #Creacion de los directorios
   print("Creando Directorios: ")
   tic()
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed"))
-  dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/raw"))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed", "/corpus"))
   dir.create(paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed", "/terminology"))
   toc()
@@ -68,6 +67,7 @@ createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, idioma, e
   
   #Lectura de documentos
   print("Leyendo Documentos: ")
+  print(ruta)
   tic()
   if(encoding == "Default"){
     docs <- readtext(paste0(ruta, "*"), #Leo todo lo que tenga ese path
@@ -92,59 +92,11 @@ createCorpus <- function(ruta, nameCorpus, nThreads, patr, paternType, idioma, e
   tic()
   quanteda_options(threads = hilos)
   quancorpusDocs <- corpus(docs)
-  tDocs <- texts(quancorpusDocs) #No tarda nada. 
-  toc()
-  
-  #Descarga de modelo selecionado para la extraccion de terminos
-  print("Descargando modelo: ")
-  model <- udpipe_download_model(language = idioma)
-  path <- model$file_model
-  
-  #Extracción de terminos
-  print("Extrayendo Terminos: ")
-  tic()
-  x <- udpipe(tDocs, path, parallel.cores = hilos)
-  toc()
-  
-  x$phrase_tag <- as_phrasemachine(x$upos, 
-                                   type = "upos" #Puede ser tambiÃ©n "penn-treebank"
-  )
-  
-  #Extraccion de terminología segun patron
-  print("Extrayendo Terminologia: ")
-  tic()
-  if(paternType == "upos"){
-    stats <<- keywords_phrases(x = x$upos, 
-                               term = tolower(x$token), 
-                               pattern = patr,
-                               is_regex = TRUE, 
-                               detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
-    )
-  } else if(paternType == "pos"){
-    stats <<- keywords_phrases(x = x$phrase_tag, 
-                               term = tolower(x$token), 
-                               pattern = patr,
-                               is_regex = TRUE,
-                               detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
-    )
-  } else {
-    stats <<- keywords_rake(x = x, 
-                           term = "lemma", 
-                           group = "doc_id", 
-                           relevant = x$upos %in% c("NOUN", "ADJ"))
-  }
-  terminology <- data.frame(Terminos = subset(stats, select=c("keyword")), Autor = c(rep("Orignial", nrow(stats))), Fecha = c(rep(Sys.Date(), nrow(stats))))
-  terminology <- ddply(terminology, .(keyword, Autor, Fecha), nrow)
-  colnames(terminology)[4] <- "Frecuencia"
   toc()
 
   #Guardado de datos
   saveRDS(metadata, paste0(getwd(),"/data/corpus_data/" ,nameCorpus,"/processed/corpus/metadata.rds"))
   saveRDS(quancorpusDocs, paste0(getwd(),"/data/corpus_data/" ,nameCorpus,"/processed/corpus/corpus.rds"))
-  saveRDS(terminology, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminology.rds"))
-  saveRDS(x, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyFull.rds"))
-  saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyChanges.rds"))
-  saveRDS(stats, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyExtracted.rds"))
   
-  print("¡Operacion realizada con exito!")
+  print("¡corpus creado con exito!")
 }

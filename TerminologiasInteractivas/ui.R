@@ -25,39 +25,75 @@ fluidPage(
                                )
                                
                       ),
-                      tabPanel("Crear Terminología", value = "add", icon = icon("folder-open"),
-                               #h2(strong("Gestor de documentos")),
-                               h1("Seleccionar una terminología"),
+                      tabPanel("Gestor de documentos", value = "add", icon = icon("folder-open"),
+                               h1("Seleccionar"),
                                fluidRow(
-                                 column(6, 
-                                        wellPanel(
-                                          fluidRow(radioGroupButtons("corpusOpt", label = h4(("Seleccione el Corpus sobre el que desea trabajar")), justified= TRUE, choices = corpusList, selected = currentCorpus, direction = "vertical")),
-                                          # fluidRow(selectInput("corpusOpt", "Seleccione el Corpus sobre el que desea trabajar",
-                                          #                      choices = corpusList, selected = currentCorpus)),
-                                        )
-                                 ),
                                  column(6, align = "center",
                                         wellPanel(
                                           fluidRow(h4("El corpus seleccionado es: ")),
                                           fluidRow(h2(strong(textOutput("docSelected"))))
                                         )
-                                 )
-                               ), br(),
-                               h1("Crear una nueva terminología"),
-                               fluidRow(
-                                 column(12,
+                                 ),
+                                 column(6, align = "center",
                                         wellPanel(
-                                          
+                                          fluidRow(h4("La terminología seleccionada es: ")),
+                                          fluidRow(h2(strong(textOutput("termSelected"))))
+                                        )
+                                 )
+                               ),
+                               fluidRow(
+                                 column(6, 
+                                        wellPanel(
+                                          fluidRow(radioGroupButtons("corpusOpt", label = h4(("Seleccione el Corpus sobre el que desea trabajar:")), justified= TRUE, choices = corpusList, selected = currentCorpus, direction = "vertical")),
+                                        )
+                                 ),
+                                 column(6, 
+                                        wellPanel(
+                                          fluidRow(radioGroupButtons("termOpt", label = h4(("Seleccione el Corpus sobre el que desea trabajar:")), justified= TRUE, choices = termList, selected = currentCorpus, direction = "vertical")),
+                                        )
+                                 ),
+                               ), br(),
+                               h1("Crear"),
+                               fluidRow(
+                                 column(6, 
+                                        wellPanel(
+                                          fluidRow(column(12, h4(strong("Crear corpus")))),
                                           fluidRow(
                                             column(6,
-                                                   selectInput("paternType", "Selecciona el tipo de patron:",
-                                                               c("POS" = "pos",
-                                                                 "UPOS" = "upos",
-                                                                 "RAKE" = "rake"))
+                                                   h5(strong("Documentos: ")),
+                                                   shinyDirButton("dir", "Seleccionar documentos", "Seleccionar documentos")
                                             ),
                                             column(6,
-                                                   selectInput("idioma", "Selecciona el idioma de los documentos introducidos:",
-                                                               c("afrikaans-afribooms",
+                                                   h5(strong("Codificación:")),
+                                                   selectInput("encoding", label = NULL,
+                                                              choices = c("Default", "UTF-8-BOM", "ISO-8859-1"), selected = "Default")
+                                            ),
+                                          ),
+                                          fluidRow(
+                                            column(12,
+                                                   h5(strong("Escriba el nombre del nuevo corpus: ")),
+                                                   textInput("nameCorp", label = NULL, placeholder = "Nombre del nuevo corpus")
+                                            ),
+                                          ),
+                                          fluidRow(
+                                            column(12, align = "right", actionButton("dirCreate", label = "Crear", width = 'auto')),
+                                          )
+                                        )
+                                 ),
+                                 column(6, 
+                                        wellPanel(
+                                          fluidRow(column(12, h4(strong("Crear terminologia")))),
+                                          fluidRow(
+                                            column(6,
+                                                   h5(strong("Corpus: ")),
+                                                   selectInput("corpusForTerm",label = NULL,
+                                                               choices = corpusList, selected = currentCorpus)
+                                                   #shinyDirButton("dir", "Seleccionar corpus", "Seleccionar documentos")
+                                            ),
+                                            column(6,
+                                                   h5(strong("Modelo:")),
+                                                   selectInput("idioma", label = NULL,
+                                                               choices = c("afrikaans-afribooms",
                                                                  "ancient_greek-perseus", "ancient_greek-proiel", "arabic-padt",
                                                                  "armenian-armtdp", "basque-bdt", "belarusian-hse", "bulgarian-btb",
                                                                  "buryat-bdt", "catalan-ancora", "chinese-gsd", "classical_chinese-kyoto",
@@ -87,44 +123,75 @@ fluidPage(
                                           ),
                                           fluidRow(
                                             column(6,
-                                              h5(strong("Escriba el patrón que desea emplear   ")),
-                                              selectizeInput("patern", label = NULL, choices = c("(A|N)*N(P+D*(A|N)*N)*",
-                                                                                                 "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)",
-                                                                                                 "N", 
-                                                                                                 "((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON)(ADP+DET*((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON))*",
-                                                                                                 "NOUN|PROPN|PRON|NOUNADPDETNOUN|PROPNPROPN|ADJNOUN|NUMNOUN|PROPNPROPNPROPN|PROPNPROPNPROPNPROPN|NOUNPRON|NUMPROPN|NOUNPROPN")),
+                                                   h5(strong("Tipo de patrón:")),
+                                                   selectInput("paternType", label = NULL,
+                                                               choices = c("POS" = "pos",
+                                                                           "UPOS" = "upos",
+                                                                           "RAKE" = "rake"))
                                             ),
-                                            
                                             column(6,
-                                                   h5(strong("Escriba el nombre de la nueva terminología")),
-                                                   textInput("nameCorp", label = NULL, placeholder = "Nombre de la nueva terminología")
+                                                   h5(strong("Patrón:")),
+                                                   selectizeInput("patern", label = NULL, 
+                                                                  choices = c("(A|N)*N(P+D*(A|N)*N)*",
+                                                                              "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)",
+                                                                              "N"))
+                                                   )
+                                          ),
+                                          fluidRow(
+                                            column(12,
+                                                   h5(strong("Escriba el nombre de la nueva terminología: ")),
+                                                   textInput("nameTerm", label = NULL, placeholder = "Nombre de la nueva terminología")
                                             ),
                                           ),
                                           fluidRow(
-                                            column(6, align = "center",
-                                                   h5(strong("Seleccione los documentos para extraer la terminologia")),
-                                                   shinyDirButton("dir", "Seleccionar documentos", "Seleccionar documentos")
-                                            ),
-                                            column(6,
-                                                   selectInput("encoding", "Para un mejor rendimiento, elija la codificacion de los documentos :",
-                                                               c("Default", "UTF-8-BOM", "ISO-8859-1"), selected = "Default")
-                                            ),
-                                          ),
+                                            column(12, align = "right", actionButton("dirCreateTerm", label = "Crear", width = 'auto')),
+                                          )
+                                        ),
+                                 )
+                               ),
+                               h1("Subir"),
+                               fluidRow(
+                                 column(6, 
+                                        wellPanel(
+                                          fluidRow(column(12, h4(strong("Subir corpus")))),
                                           fluidRow(
-                                                   column(12, align = "center", actionButton("dirCreate", label = "Crear", width = 'auto')),
-                                                   #add_busy_spinner(spin = "fading-circle")
+                                            column(6, align = "left", shinyDirButton("dirCorp", "Seleccionar corpus", "Seleccionar documentos")),
+                                            column(6, align = "right", actionButton("dirCreateCorp", label = "Subir", width = 'auto'))
+                                          )
+                                        )
+                                 ),
+                                 column(6, 
+                                        wellPanel(
+                                          fluidRow(column(12, h4(strong("Subir terminologia")))),
+                                          fluidRow(
+                                            column(6, align = "left", shinyDirButton("dirTerm", "Seleccionar Terminología", "Seleccionar documentos")),
+                                            column(6, align = "right", actionButton("dirCreateTerm", label = "Subir", width = 'auto'))
                                           )
                                         )
                                  )
                                ),
+                               h1("Eliminar"),
                                fluidRow(
-                                 column(12, 
+                                 column(6, 
                                         wellPanel(
                                           fluidRow(column(12, h4(strong("Eliminar corpus")))),
-                                          fluidRow(column(12, textInput("corpusDelText", label = NULL, placeholder = "Escriba el nombre del documento para borrar"))),
-                                          fluidRow(column(12, actionButton("corpusDelBut", label = "Eliminar", width = 'auto')))
-                                        ))
-                               )),
+                                          fluidRow(
+                                            column(8, textInput("corpusDelText", label = NULL, placeholder = "Escriba el nombre del corpus para borrar")),
+                                            column(4, align = "right", actionButton("corpusDelBut", label = "Eliminar", width = 'auto'))
+                                          )
+                                        ),
+                                  ),
+                                 column(6,
+                                        wellPanel(
+                                          fluidRow(column(12, h4(strong("Eliminar Terminología")))),
+                                          fluidRow(
+                                            column(8, textInput("termDelText", label = NULL, placeholder = "Escriba el nombre de la terminología para borrar")),
+                                            column(4, align = "right", actionButton("termDelBut", label = "Eliminar", width = 'auto'))
+                                          )
+                                        )
+                                 )
+                               )
+                      ),
                       tabPanel("Gestor de terminología", value = "termin", icon = icon("file-alt"),
                                fluidRow( 
                                  column(3, actionButton("seeListChanges", "Lista de cambios", width = '130px', style='height:30px')),

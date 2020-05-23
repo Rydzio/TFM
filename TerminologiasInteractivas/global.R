@@ -28,49 +28,42 @@ setwd("~/TFM/TerminologiasInteractivas")
 
 source(paste0(getwd(), "/modules/get_document_path.R"))
 source(paste0(getwd(), "/modules/create_corpus.R"))
+source(paste0(getwd(), "/modules/create_terminology.R"))
 source(paste0(getwd(), "/modules/add_documents.R"))
 
-hilos = 8
+hilos = 16
+emptyCorpus <- FALSE
 
 # Read config file
 config_file <- readLines("config_file.txt") 
 mode <- substr(config_file[3], 7, nchar(config_file[3]))
 
-corpusList <- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/"), recursive = FALSE))
-
 currentCorpus <- substr(config_file[5], 9, nchar(config_file[5]))
+path <<- paste0(getwd(), "/data/corpus_data/")
 corpusPath <- paste0(getwd(), "/data/corpus_data/", currentCorpus)
 
+corpusList <- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/"), recursive = FALSE))
+termList <- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/",currentCorpus,"/processed/terminology/"), recursive = FALSE))
+currentTerm <- termList[1]
+
 statistics <- list()
-#corpus <- readRDS(paste0(corpusPath, "/processed/corpus/corpus.rds"))
-#corpusTokens <- readRDS(paste0(corpusPath, "/processed/corpus/corpusTokens.rds"))
-#corpusPagesTokens <- readRDS(paste0(corpusPath, "/processed/corpus/corpusPagesTokens.rds"))
-tableTerms <<- readRDS(paste0(corpusPath, "/processed/terminology/terminology.rds"))
-listChangesTerms <<- readRDS(paste0(corpusPath, "/processed/terminology/terminologyChanges.rds"))
+
+
+tableTerms <<- readRDS(paste0(corpusPath, "/processed/terminology/",currentTerm ,"/terminology.rds"))
+listChangesTerms <<- readRDS(paste0(corpusPath, "/processed/terminology/",currentTerm ,"/terminologyChanges.rds"))
 dtMetadata <<- readRDS(paste0(corpusPath, "/processed/corpus/metadata.rds"))
 corp <<- readRDS(paste0(corpusPath, "/processed/corpus/corpus.rds"))
-
-#documents <- corpusPagesTokens
-# indexPage <- regexpr(pattern = '@Page', documents, fixed = TRUE)
-# documents <- substring(documents, 1, indexPage)
-# documents <- substring(documents, 1, nchar(documents)-1)
-# uniqueDocuments <- unique(documents)
-# 
-# #tokens <- as.list(corpusTokens)
-# #numberTokens <- sum(unlist(lapply(tokens, length)))
-# 
-# statistics["NumberDocuments"] <- as.character(length(uniqueDocuments))
-
-#statistics["NumberPages"] <- summary(corpusPagesTokens)[1]
-
-#statistics["NumberTokens"] <- as.character(numberTokens)
 
 termsList <<- tableTerms$Terminos
 
 reactiveTerm <<- reactiveValues(data = tableTerms)
 reactiveListTerm <<- reactiveValues(data = termsList)
 reactiveCorpusList <<- reactiveValues(data = corpusList)
+reactiveTermList <<- reactiveValues(data = termList)
 reactiveCurrentCorpus <<- reactiveValues(data = currentCorpus)
+reactiveCurrentTerm <<- reactiveValues(data = currentTerm)
+
+# reactivePaternChoices <<- reactiveValues(data = c())
 
 #quantokSession <- corpusTokens
 #quantokPagesSession <- corpusPagesTokens

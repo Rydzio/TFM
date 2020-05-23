@@ -2,4 +2,4 @@ Indicar el modo de la App: advanced (todas las opciones) / demo (inicio y búsqu
 
 Mode: demo
 
-Corpus: legal
+Corpus: prueba
