@@ -82,6 +82,9 @@ function(input, output, session) {
                               label = NULL, 
                               choices = termList
       )
+      
+      updateSelectInput(session, "TermForDownload",
+                        choices = termList)
       }
     #termList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/",input$corpusOpt,"/processed/terminology"), recursive = FALSE))
     
@@ -184,6 +187,9 @@ function(input, output, session) {
           print(termList)
           
           updateRadioGroupButtons(session, 'termOpt', label = NULL, choices = termList, selected = termList[1])
+          updateSelectInput(session, "TermForDownload",
+                            choices = termList,
+                            selected = termList[1])
         }
         else {
           showModal(
@@ -210,6 +216,32 @@ function(input, output, session) {
   # }
   # )
   # 
+  
+  #Descargar corpus -----------------------------------------------------------------------------------------------------------------------
+  output$downloadDataCorpus <- downloadHandler(
+
+    filename = function() {
+      paste(input$CorpusForDownload, "-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      data <- readRDS(paste0(path, input$CorpusForDownload,"/processed/corpus/corpus.rds"))
+      data <- texts(data)
+      write.csv(data, file)
+    }
+  )
+  
+  #Descargar terminología -----------------------------------------------------------------------------------------------------------------------
+  output$downloadDataTerm <- downloadHandler(
+    
+    filename = function() {
+      paste(currentCorpus,"-", input$TermForDownload, "-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      print(input$TermForDownload)
+      data <- readRDS(paste0(corpusPathSession, "/processed/terminology/",input$TermForDownload,"/terminology.rds"))
+      write.csv(data, file)
+    }
+  )
 
   #Cambiar de terminología -------------------------------------------------------------------------------------------------------
   observeEvent(input$termOpt, {
@@ -256,6 +288,17 @@ function(input, output, session) {
     reactiveTerm$data <<- tableTerms
     reactiveListTerm$data <<- termsList
     reactiveCurrentTerm$data <<- currentTerm
+    
+    #Contextualizar Terminologías
+    output$dtTermsRaw = DT::renderDataTable(
+      tableTerms %>% select(1,4),selection = 'single'
+    )
+    
+    observeEvent(input$dtTermsRaw_rows_selected, {
+      output$dtTerms = DT::renderDataTable({
+        kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1])) %>% select(1,4,5,6)
+      })
+    })
     
     remove_modal_spinner()
   })
@@ -330,6 +373,10 @@ function(input, output, session) {
     reactiveCurrentCorpus$data <<- currentCorpus
     reactiveCurrentTerm$data <<- currentTerm
     
+    updateSelectInput(session, "TermForDownload",
+                      choices = termList,
+                      selected = termList[1])
+    
     updateRadioGroupButtons(session, 
                             "termOpt", 
                             label = NULL, 
@@ -348,12 +395,12 @@ function(input, output, session) {
     
     #Contextualizar Terminologías
     output$dtTermsRaw = DT::renderDataTable(
-      tableTerms,selection = 'single'
+      tableTerms %>% select(1,4),selection = 'single'
     )
     
     observeEvent(input$dtTermsRaw_rows_selected, {
       output$dtTerms = DT::renderDataTable({
-        kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1]))
+        kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1])) %>% select(1,4,5,6)
       })
     })
     

@@ -26,7 +26,7 @@ fluidPage(
                                
                       ),
                       tabPanel("Gestor de documentos", value = "add", icon = icon("folder-open"),
-                               h1("Seleccionar"),
+                               column(12, align="center", h1("Seleccionar")),
                                fluidRow(
                                  column(6, align = "center",
                                         wellPanel(
@@ -49,11 +49,11 @@ fluidPage(
                                  ),
                                  column(6, 
                                         wellPanel(
-                                          fluidRow(radioGroupButtons("termOpt", label = h4(("Seleccione el Corpus sobre el que desea trabajar:")), justified= TRUE, choices = termList, selected = currentCorpus, direction = "vertical")),
+                                          fluidRow(radioGroupButtons("termOpt", label = h4(("Seleccione el Corpus sobre el que desea trabajar:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
                                         )
                                  ),
                                ), br(),
-                               h1("Crear"),
+                               column(12, align="center",h1("Crear")),
                                fluidRow(
                                  column(6, 
                                         wellPanel(
@@ -149,7 +149,28 @@ fluidPage(
                                         ),
                                  )
                                ),
-                               h1("Subir"),
+                               column(12, align="center",h1("Descargar")),
+                               fluidRow(
+                                 column(6,
+                                        wellPanel(
+                                          fluidRow(column(12, h4(strong("Descargar corpus")))),
+                                          fluidRow(
+                                            column(8, selectInput("CorpusForDownload",label = NULL, choices = corpusList, selected = currentCorpus)),
+                                            column(4, align = "right", downloadButton("downloadDataCorpus", "Download"))
+                                          )
+                                        )
+                                 ),
+                                 column(6,
+                                        wellPanel(
+                                          fluidRow(column(12, h4(strong("Descargar terminologia")))),
+                                          fluidRow(
+                                            column(8, selectInput("TermForDownload",label = NULL, choices = termList, selected = NULL)),
+                                            column(4, align = "right", downloadButton("downloadDataTerm", "Download"))
+                                          )
+                                        )
+                                 )
+                               ),
+                               column(12, align="center",h1("Subir")),
                                fluidRow(
                                  column(6, 
                                         wellPanel(
@@ -170,7 +191,7 @@ fluidPage(
                                         )
                                  )
                                ),
-                               h1("Eliminar"),
+                               column(12, align="center",h1("Eliminar")),
                                fluidRow(
                                  column(6, 
                                         wellPanel(
@@ -239,16 +260,17 @@ fluidPage(
                       tabPanel("Contextualizar", value = "context", icon = icon("quote-left"),
                                h2("Ver terminos en contexto"),
                                fluidRow(
-                                 column(6,
+                                 column(3,
                                         wellPanel( style = "background: white",
                                                    h4("Tabla con los términos actuales:"),
                                                    dataTableOutput("dtTermsRaw")
                                         )
                                  ),
-                                 column(6,
+                                 column(9,
                                         wellPanel( style = "background: white",
                                                    h4("Tabla con los términos en contexto:"),
-                                                   dataTableOutput("dtTerms")
+                                                   dataTableOutput("dtTerms"
+                                                                   )
                                         )
                                  )
                                )

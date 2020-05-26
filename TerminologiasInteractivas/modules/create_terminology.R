@@ -65,6 +65,9 @@ createTerminology <- function(quancorpusDocs, nameCorpus, nameTerm, nThreads, pa
                                is_regex = TRUE, 
                                detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
     )
+    terminology <- data.frame(Terminos = subset(stats, select=c("keyword")), Autor = c(rep("Orignial", nrow(stats))), Fecha = c(rep(Sys.Date(), nrow(stats))))
+    terminology <- ddply(terminology, .(keyword, Autor, Fecha), nrow)
+    colnames(terminology)[4] <- "Frecuencia"
   } else if(paternType == "pos"){
     stats <<- keywords_phrases(x = x$phrase_tag, 
                                term = tolower(x$token), 
@@ -72,15 +75,20 @@ createTerminology <- function(quancorpusDocs, nameCorpus, nameTerm, nThreads, pa
                                is_regex = TRUE,
                                detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
     )
+    terminology <- data.frame(Terminos = subset(stats, select=c("keyword")), Autor = c(rep("Orignial", nrow(stats))), Fecha = c(rep(Sys.Date(), nrow(stats))))
+    terminology <- ddply(terminology, .(keyword, Autor, Fecha), nrow)
+    colnames(terminology)[4] <- "Frecuencia"
   } else {
     stats <<- keywords_rake(x = x, 
                             term = "lemma", 
                             group = "doc_id", 
                             relevant = x$upos %in% c("NOUN", "ADJ"))
+    terminology <- data.frame(Terminos = subset(stats, select=c("keyword", "freq")), Autor = c(rep("Orignial", nrow(stats))), Fecha = c(rep(Sys.Date(), nrow(stats))))
+    terminology <- terminology[, c(1, 3, 4, 2)]
+    colnames(terminology)[1] <- "keyword"
+    colnames(terminology)[4] <- "Frecuencia"
   }
-  terminology <- data.frame(Terminos = subset(stats, select=c("keyword")), Autor = c(rep("Orignial", nrow(stats))), Fecha = c(rep(Sys.Date(), nrow(stats))))
-  terminology <- ddply(terminology, .(keyword, Autor, Fecha), nrow)
-  colnames(terminology)[4] <- "Frecuencia"
+  
   toc()
   
   #Guardado de datos

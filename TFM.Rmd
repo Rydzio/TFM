@@ -28,11 +28,11 @@ hilos = 8
 #Ruta de trabajo
 setwd("~/TFM")
 
-#ruta = "/legalcorpuses*"
-ruta = "/Users/pedrohv/TFM/TerminologíasInteractivas/data/covid19/raw/documents"
+ruta = "/doc"
+#ruta = "/Users/pedrohv/TFM/TerminologíasInteractivas/data/covid19/raw/documents"
 
 #Leer un corpus
-docs <- readtext(paste0(ruta, "*"), #Leo todo lo que tenga ese path
+docs <- readtext(paste0(getwd(),ruta, "*"), #Leo todo lo que tenga ese path
                  #docvarsfrom = "filenames", 
                  #docvarnames = c("document", "language"),
                  #dvsep = "_", 
@@ -183,6 +183,11 @@ stats <- keywords_rake(x = x,
                        group = "doc_id", 
                        relevant = x$upos %in% c("NOUN", "ADJ"))
 stats$key <- factor(stats$keyword, levels = rev(stats$keyword))
+stats
+```
+
+
+```{r}
 barchart(key ~ rake, 
          data = head(subset(stats, freq > 20), 60), 
          col = "red", 
