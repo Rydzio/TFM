@@ -74,6 +74,8 @@ function(input, output, session) {
     corpForExtractingTerm <<- readRDS(paste0(path, input$corpusForTerm,"/processed/corpus/corpus.rds"))
     createTerminology(corpForExtractingTerm, input$corpusForTerm, nameTerm, hilos, input$patern, input$paternType, input$idioma)
     
+    
+    
     if(input$corpusOpt == input$corpusForTerm){
       termList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/",input$corpusForTerm,"/processed/terminology"), recursive = FALSE))
       
@@ -101,7 +103,6 @@ function(input, output, session) {
       
       emptyCorpus <<- FALSE
     }
-    
     remove_modal_spinner()
   })
   
@@ -242,6 +243,99 @@ function(input, output, session) {
       write.csv(data, file)
     }
   )
+  
+  #Subir Corpus -------------------------------------------------------------------------------------------------------------------------
+  observeEvent(input$dirCorp, {
+    print("Hola")
+    req(input$dirCorp)
+    
+    # when reading semicolon separated files,
+    # having a comma separator causes `read.csv` to error
+    tryCatch(
+      {
+        df <- read.csv(input$dirCorp$datapath)
+      },
+      error = function(e) {
+        # return a safeError if a parsing error occurs
+        stop(safeError(e))
+      }
+    )
+    
+    #Creacion de los directorios
+    dir.create(paste0(getwd(),"/data/corpus_data/", input$dirCorp$name))
+    dir.create(paste0(getwd(),"/data/corpus_data/", input$dirCorp$name, "/processed"))
+    dir.create(paste0(getwd(),"/data/corpus_data/", input$dirCorp$name, "/processed", "/corpus"))
+    dir.create(paste0(getwd(),"/data/corpus_data/", input$dirCorp$name, "/processed", "/terminology"))
+    
+    colnames(df)[1] <- "doc_id"
+    colnames(df)[2] <- "text"
+    
+    df$text <- as.character(df$text)
+    
+    print("parar")
+    
+    df <- corpus(df)
+    
+    #Guardado de datos
+    saveRDS(input$dirCorp, paste0(getwd(),"/data/corpus_data/" ,input$dirCorp$name,"/processed/corpus/metadata.rds"))
+    saveRDS(df, paste0(getwd(),"/data/corpus_data/" ,input$dirCorp$name,"/processed/corpus/corpus.rds"))
+    
+    #Actualizamos las listas de corpus
+    corpusList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/"), recursive = FALSE))
+    reactiveCorpusList$data <<- corpusList
+    
+    updateSelectInput(session, "corpusForTerm",
+                      label = NULL,
+                      choices = corpusList
+    )
+    
+    print("Adios")
+  })
+  
+  #Subir terminología ----------------------------------------------------------------------------------------------------------------------
+  observeEvent(input$dirTerm, {
+    print("Hola")
+    req(input$dirTerm)
+    
+    # when reading semicolon separated files,
+    # having a comma separator causes `read.csv` to error
+    tryCatch(
+      {
+        df <- read.csv(input$dirTerm$datapath)
+      },
+      error = function(e) {
+        # return a safeError if a parsing error occurs
+        stop(safeError(e))
+      }
+    )
+    
+    #Creacion de los directorios
+    dir.create(paste0(getwd(),"/data/corpus_data/", currentCorpus, "/processed", "/terminology/", input$dirTerm$name))
+    
+    df <- df %>% select(keyword, Autor, Fecha, Frecuencia)
+    df$keyword <- as.character(df$keyword)
+    
+    
+    #Guardado de datos
+    saveRDS(df, paste0(getwd(), "/data/corpus_data/", currentCorpus, "/processed/terminology/",input$dirTerm$name,"/terminology.rds"))
+    saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", currentCorpus, "/processed/terminology/",input$dirTerm$name,"/terminologyFull.rds"))
+    saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", currentCorpus, "/processed/terminology/",input$dirTerm$name,"/terminologyChanges.rds"))
+    saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", currentCorpus, "/processed/terminology/",input$dirTerm$name,"/terminologyExtracted.rds"))
+    
+    #Actualizamos las listas de corpus
+    termList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/",currentCorpus,"/processed/terminology"), recursive = FALSE))
+    
+    updateRadioGroupButtons(session, 
+                            "termOpt", 
+                            label = NULL, 
+                            choices = termList
+    )
+    
+    updateSelectInput(session,
+                      "TermForDownload",
+                      choices = termList)
+    
+  })
 
   #Cambiar de terminología -------------------------------------------------------------------------------------------------------
   observeEvent(input$termOpt, {
@@ -296,7 +390,10 @@ function(input, output, session) {
     
     observeEvent(input$dtTermsRaw_rows_selected, {
       output$dtTerms = DT::renderDataTable({
-        kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1])) %>% select(1,4,5,6)
+        df <- kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1])) %>% select(1,4,5,6)
+        df[,1] <- gsub("_", " ", df[,1])
+        df$context <- paste(df[,2],toupper(df[,3]),df[,4])
+        df %>% select(1,5)
       })
     })
     
@@ -400,14 +497,24 @@ function(input, output, session) {
     
     observeEvent(input$dtTermsRaw_rows_selected, {
       output$dtTerms = DT::renderDataTable({
-        kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1])) %>% select(1,4,5,6)
+        df <- kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1])) %>% select(1,4,5,6)
+        df[,1] <- gsub("_", " ", df[,1])
+        df$context <- paste(df[,2],toupper(df[,3]),df[,4])
+        df %>% select(1,5)
       })
     })
     
     # Estadisticas básicas
     output$Metadata = DT::renderDataTable({
+      dtMetadata[,2] <- gsub("_", " ", dtMetadata[,2])
       dtMetadata
-    })
+    }, 
+    
+    options = list(
+      autoWidth = FALSE,
+      columnDefs = list(list(width = '10%', targets = c(1,3)))
+      )
+    )
     
     #Corpus Actual
     output$docSelected <- renderText({ input$corpusOpt })

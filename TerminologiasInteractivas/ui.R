@@ -134,7 +134,9 @@ fluidPage(
                                                    selectizeInput("patern", label = NULL, 
                                                                   choices = c("(A|N)*N(P+D*(A|N)*N)*",
                                                                               "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)",
-                                                                              "N"))
+                                                                              "N"),
+                                                                  selected = "(A|N)*N(P+D*(A|N)*N)*"
+                                                                  )
                                                    )
                                           ),
                                           fluidRow(
@@ -176,8 +178,16 @@ fluidPage(
                                         wellPanel(
                                           fluidRow(column(12, h4(strong("Subir corpus")))),
                                           fluidRow(
-                                            column(6, align = "left", shinyDirButton("dirCorp", "Seleccionar corpus", "Seleccionar documentos")),
-                                            column(6, align = "right", actionButton("dirCreateCorp", label = "Subir", width = 'auto'))
+                                            # column(6, align = "left", shinyDirButton("dirCorp", "Seleccionar corpus", "Seleccionar documentos")),
+                                            # column(6, align = "right", actionButton("dirCreateCorp", label = "Subir", width = 'auto'))
+                                            column(12,
+                                              fileInput("dirCorp", "archivo tipo CSV",
+                                                        multiple = FALSE,
+                                                        accept = c("text/csv",
+                                                                   "text/comma-separated-values,text/plain",
+                                                                   ".csv")
+                                                        )
+                                            ),
                                           )
                                         )
                                  ),
@@ -185,8 +195,16 @@ fluidPage(
                                         wellPanel(
                                           fluidRow(column(12, h4(strong("Subir terminologia")))),
                                           fluidRow(
-                                            column(6, align = "left", shinyDirButton("dirTerm", "Seleccionar Terminología", "Seleccionar documentos")),
-                                            column(6, align = "right", actionButton("dirCreateTerm", label = "Subir", width = 'auto'))
+                                            # column(6, align = "left", shinyDirButton("dirTerm", "Seleccionar Terminología", "Seleccionar documentos")),
+                                            # column(6, align = "right", actionButton("dirCreateTerm", label = "Subir", width = 'auto'))
+                                            column(12,
+                                                   fileInput("dirTerm", "archivo tipo CSV",
+                                                             multiple = FALSE,
+                                                             accept = c("text/csv",
+                                                                        "text/comma-separated-values,text/plain",
+                                                                        ".csv")
+                                                   )
+                                            ),
                                           )
                                         )
                                  )
@@ -249,7 +267,6 @@ fluidPage(
                                )
                       ),
                       tabPanel("Datos estadisticos", value = "stat", icon = icon("list"),
-                               #h2(strong("Datos estadisticos")),
                                h5("Información estadistica relacionada con el corpus inicial de los documentos."),
                                br(),
                                wellPanel( style = "background: white",
@@ -260,17 +277,17 @@ fluidPage(
                       tabPanel("Contextualizar", value = "context", icon = icon("quote-left"),
                                h2("Ver terminos en contexto"),
                                fluidRow(
-                                 column(3,
-                                        wellPanel( style = "background: white",
-                                                   h4("Tabla con los términos actuales:"),
-                                                   dataTableOutput("dtTermsRaw")
+                                 column(5,
+                                        wellPanel(
+                                          style = "background: white",
+                                          h4("Tabla con los términos actuales:"),
+                                          dataTableOutput("dtTermsRaw")
                                         )
                                  ),
-                                 column(9,
+                                 column(7,
                                         wellPanel( style = "background: white",
                                                    h4("Tabla con los términos en contexto:"),
-                                                   dataTableOutput("dtTerms"
-                                                                   )
+                                                   dataTableOutput("dtTerms")
                                         )
                                  )
                                )

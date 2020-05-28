@@ -42,7 +42,7 @@ createTerminology <- function(quancorpusDocs, nameCorpus, nameTerm, nThreads, pa
   
   #Descarga de modelo selecionado para la extraccion de terminos
   print("Descargando modelo: ")
-  model <- udpipe_download_model(language = idioma)
+  model <- udpipe_download_model(language = idioma) #Siempre la ultima version
   path <- model$file_model
   
   #Extracción de terminos

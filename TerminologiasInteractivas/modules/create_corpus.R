@@ -58,7 +58,7 @@ createCorpus <- function(ruta, nameCorpus, nThreads, encoding){
       modified = "NA"
       key = "NA"
     }
-    documentInfo <- data.frame("Nombre" = fname, "Pag" = toString(pages) , "Creacion" = as.character(created), "Modif" = as.character(modified) , "Datos" = toString(unlist(key)), stringsAsFactors = FALSE)
+    documentInfo <- data.frame("Nombre" = gsub("_", " ", fname), "Pag" = toString(pages) , "Creacion" = as.character(created), "Modif" = as.character(modified) , "Datos" = toString(unlist(key)), stringsAsFactors = FALSE)
     metadata <- rbind(metadata,documentInfo) 
   }
   cbind(sizes$size, metadata) -> metadata
