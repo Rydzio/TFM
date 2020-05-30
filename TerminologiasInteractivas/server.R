@@ -480,6 +480,12 @@ function(input, output, session) {
                             choices = termList,
                             selected = termList[1]
     )
+    print("Tokens")
+    tic()
+    tokens <- tokens(corp)
+    ntokens <- ntoken(corp)
+    saveRDS(tokens, paste0(corpusPathSession, "/processed/corpus/tokens.rds"))
+    toc()
     
     #DATOS DE TERMINOLOGÍA
     output$TermExtracted = DT::renderDataTable({
@@ -521,6 +527,11 @@ function(input, output, session) {
     
     #Terminología Actual
     output$termSelected <- renderText({ input$termOpt })
+    
+    output$corpSize <- renderText({ object.size(corp) / 1000000 })
+    output$docSize <- renderText({ sum(dtMetadata$TamanoMB) })
+    output$tokenSize <- renderText({ sum(ntokens) })
+    output$pageTotal <- renderText({ sum(as.integer(dtMetadata$Pag)) })
     
     output$docAdd <- renderUI({
       fileInput("docAdd", label = "Añadir documentos", multiple = TRUE)

@@ -31,7 +31,7 @@ source(paste0(getwd(), "/modules/create_corpus.R"))
 source(paste0(getwd(), "/modules/create_terminology.R"))
 source(paste0(getwd(), "/modules/add_documents.R"))
 
-hilos = 16
+hilos = 8
 emptyCorpus <- FALSE
 
 # Read config file
@@ -53,6 +53,10 @@ tableTerms <<- readRDS(paste0(corpusPath, "/processed/terminology/",currentTerm 
 listChangesTerms <<- readRDS(paste0(corpusPath, "/processed/terminology/",currentTerm ,"/terminologyChanges.rds"))
 dtMetadata <<- readRDS(paste0(corpusPath, "/processed/corpus/metadata.rds"))
 corp <<- readRDS(paste0(corpusPath, "/processed/corpus/corpus.rds"))
+
+corpSize <- object.size(corp)
+tokens <- tokens(corp)
+ntokens <- ntoken(corp)
 
 termsList <<- tableTerms$Terminos
 

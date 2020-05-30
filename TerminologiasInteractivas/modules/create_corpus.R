@@ -62,7 +62,7 @@ createCorpus <- function(ruta, nameCorpus, nThreads, encoding){
     metadata <- rbind(metadata,documentInfo) 
   }
   cbind(sizes$size, metadata) -> metadata
-  colnames(metadata)[1] <- "TamañoMB"
+  colnames(metadata)[1] <- "TamanoMB"
   toc()
   
   #Lectura de documentos
