@@ -1,0 +1,393 @@
+---
+title: "Extraccion de terminos TFM"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+Leemos los documentos.
+```{r echo=FALSE}
+library(readtext)
+
+hilos = 8
+
+#font_import()
+
+#Ruta de trabajo
+setwd("~/TFM")
+
+ruta = "/doc"
+
+#ruta = "/legal"
+
+
+#ruta = "/Users/pedrohv/TFM/TerminologíasInteractivas/data/covid19/raw/documents"
+
+#Leer un corpus
+docs <- readtext(paste0(getwd(),ruta, "*"), #Leo todo lo que tenga ese path
+                 #docvarsfrom = "filenames", 
+                 #docvarnames = c("document", "language"),
+                 #dvsep = "_", 
+                 encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
+                 verbosity = 3) 
+
+print("Se han leido los documentos del corpus con éxito")
+
+```
+
+
+Creamos el corpus de quanteda
+```{r}
+library(quanteda)
+
+# create quanteda corpus
+quanteda_options(threads = hilos)
+quancorpusDocs <- corpus(docs)
+
+#Obtenemos un resumen del corpus que hemops creado
+summ <- summary(quancorpusDocs,    #Esto tarda unos segundos. Types es el num de tokens Únicos.
+                n = nrow(docs))    #Por defecto son 100
+sum(summ$Sentences)
+sum(summ$Tokens)
+
+#Puedo sacar los textos 
+tDocs <- texts(quancorpusDocs) #No tarda nada. 
+                       #Un vector nombrado (cada elemento tiene el nombre del doc). 
+                       #Cada elemento es una cadena con el texto del doc.
+```
+
+
+Descargamos el modelo udpipe de Google y extraemos los terminos.
+```{r}
+library(udpipe)
+library(tictoc)
+
+model <- udpipe_download_model(language = "spanish")
+#udmodel_spanish_gsd <- udpipe_load_model(file = 'spanish-gsd-ud-2.4-190531.udpipe')
+
+path <- model$file_model
+
+tic()
+x <- udpipe(tDocs, path, parallel.cores = hilos)
+toc()
+
+saveRDS(x, file = "termExtraction/udpipeEspañol1.rds")
+#x <- readRDS(file = "airbus.rds")
+```
+
+
+
+```{r}
+library(lattice)
+
+#Plotting Part-of-speech tags from the given text
+
+stats <- txt_freq(x$upos) #upos = universal part of speech
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = stats, col = "yellow", 
+         main = "UPOS (Universal Parts of Speech)\n frequency of occurrence", 
+         xlab = "Freq")
+```
+
+
+
+```{r}
+stats <- subset(x, upos %in% "NOUN")
+stats <- txt_freq(x = stats$lemma)
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = head(stats, 30), col = "cadetblue", main = "Most occurring nouns", xlab = "Freq")
+```
+
+
+
+```{r}
+stats <- subset(x, upos %in% c("VERB")) 
+stats <- txt_freq(stats$token)# tambiÃ©n puedo poner lemma si quiero ver el verbo en infinitivo
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = head(stats, 20), col = "gold", 
+         main = "Most occurring Verbs", xlab = "Freq")
+```
+
+
+
+```{r}
+stats <- subset(x, upos %in% c("VERB")) 
+stats <- txt_freq(stats$lemma)# el lemma para el verbo en infinitivo
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = head(stats, 20), col = "gold", 
+         main = "Most occurring Verbs (lemma)", xlab = "Freq")
+```
+
+
+
+```{r}
+## Collocation (words following one another)
+stats <- keywords_collocation(x = x, 
+                             term = "token", group = c("doc_id", "paragraph_id", "sentence_id"),
+                             ngram_max = 4)
+## Co-occurrences: How frequent do words occur in the same sentence, in this case only nouns or adjectives
+stats <- cooccurrence(x = subset(x, upos %in% c("NOUN", "ADJ")), 
+                     term = "lemma", group = c("doc_id", "paragraph_id", "sentence_id"))
+## Co-occurrences: How frequent do words follow one another
+stats <- cooccurrence(x = x$lemma, 
+                     relevant = x$upos %in% c("NOUN", "ADJ"))
+## Co-occurrences: How frequent do words follow one another even if we would skip 2 words in between
+stats <- cooccurrence(x = x$lemma, 
+                     relevant = x$upos %in% c("NOUN", "ADJ"), skipgram = 2)
+head(stats)
+```
+
+
+```{r warning=FALSE}
+library(textrank)
+stats <- textrank_keywords(x$lemma,
+                          relevant = x$upos %in% c("NOUN", "ADJ"),
+                          ngram_max = 8, sep = " ")
+stats <- subset(stats$keywords, ngram > 1 & freq >= 5)
+stats
+```
+
+
+
+```{r}
+TermFreq <- document_term_frequencies(x)
+```
+
+
+
+```{r}
+stats <- keywords_rake(x = x, 
+                       term = "lemma", 
+                       group = "doc_id", 
+                       relevant = x$upos %in% c("NOUN", "ADJ"))
+stats$key <- factor(stats$keyword, levels = rev(stats$keyword))
+stats
+```
+
+```{r}
+x$phrase_tag <- as_phrasemachine(x$upos, 
+                                 type = "upos" #Puede ser tambiÃ©n "penn-treebank"
+                                )#Convierte los tags de upos a phrasemachine (Handler 2016). 
+
+statsPOS <- keywords_phrases(x = x$phrase_tag, 
+                          term = tolower(x$token), 
+                          pattern = "(A|N)*N(P+D*(A|N)*N)*",
+                          is_regex = TRUE, 
+                          detailed = TRUE 
+)
+statsPOS
+```
+
+```{r}
+# Para cada doc_id calcular el keyword_phrases y añadirle una columna con su doc_id
+
+split(x, x$doc_id) -> xSplit
+
+
+```
+
+```{r}
+
+statsPOS2 <- data.frame()
+statPOSSplit <- data.frame()
+
+for (doc_id in xSplit) {
+  
+  
+  statsPOS <- keywords_phrases(x = doc_id$phrase_tag, 
+                          term = tolower(doc_id$token), 
+                          pattern = "(A|N)*N(P+D*(A|N)*N)*",
+                          is_regex = TRUE, 
+                          detailed = FALSE 
+                        
+  )
+
+  cbind(rep(doc_id$doc_id[1], nrow(statsPOS)), statsPOS) ->> statsPOS2
+  
+  colnames(statsPOS2)[1] <- "doc_id"
+  
+  rbind(statsPOS2, statPOSSplit) ->> statPOSSplit
+  
+}
+
+statPOSSplit
+
+```
+
+
+```{r}
+TestingFreq <- statPOSSplit[, c("doc_id", "keyword", "freq")]
+colnames(TestingFreq)[2] <- "term"
+dtm <- document_term_matrix(TestingFreq)
+
+## Calculate tfidf
+tfidf <- dtm_tfidf(dtm)
+```
+
+
+
+```{r}
+
+tfdf <- data.frame(tfidf)
+
+nombres <- data.frame(dimnames(tfidf))
+
+colnames(nombres)[1] <- "doc_name"
+
+#cbind(nombres, tfdf$tfidf) -> df
+
+#df
+
+```
+
+```{r}
+
+tfdf$tfidf <- as.character(tfdf$tfidf)
+
+tfdf
+```
+
+```{r}
+nombres$doc_name <- as.character(nombres$doc_name)
+
+class(nombres$doc_name)
+```
+
+```{r}
+df <- data.frame("term" = nombres$doc_name, "TF_IDF"= tfdf$tfidf)
+
+df
+```
+
+```{r}
+library(tidyverse)
+
+toCompare <- statPOSSplit %>% select(keyword)
+
+toCompare <- unique(toCompare)
+
+nrow(toCompare)
+```
+
+
+```{r}
+newCol = c()
+
+for (keyword_name in statPOSSplit$keyword) {
+  append(newCol,tfidf[keyword_name]) ->> newCol
+  }
+
+length(newCol)
+```
+
+```{r}
+
+cbind(statPOSSplit, newCol) -> statsTF_IDF
+
+colnames(statsTF_IDF)[5] <- "TF_IDF"
+
+statsTF_IDF
+
+```
+
+
+
+```{r}
+total_words <- statsTF_IDF %>% 
+  group_by(doc_id) %>% 
+  summarize(total = sum(freq))
+
+statsTF_IDF_Total <- left_join(statsTF_IDF, total_words)
+
+
+statsTF_IDF_Total
+```
+
+
+```{r}
+freq_by_rank <- statsTF_IDF_Total %>% 
+  group_by(doc_id) %>% 
+  mutate(rank = row_number(), 
+         `term frequency` = freq/total)
+
+freq_by_rank
+```
+
+
+```{r}
+freq_by_rank %>% 
+  ggplot(aes(rank, `term frequency`, color = doc_id)) + 
+  geom_line(size = 1.1, alpha = 0.8, show.legend = FALSE) + 
+  scale_x_log10() +
+  scale_y_log10()
+```
+
+
+```{r}
+library(tidytext)
+
+AnotherTF_IDF <- freq_by_rank %>%
+  bind_tf_idf(keyword, doc_id, freq)
+
+AnotherTF_IDF
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

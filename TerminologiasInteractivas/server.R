@@ -25,7 +25,7 @@ function(input, output, session) {
     allowContains <<- input$allowContains
   })
   
-  #Crear Corpus
+  #Crear Corpus -----------------------------------------------------------------------------------------------------------------------------------
   observeEvent(input$dirCreate, {
     show_modal_spinner(text = "Creando Corpus...")
     if(input$nameCorp == "") {
@@ -267,6 +267,9 @@ function(input, output, session) {
     dir.create(paste0(getwd(),"/data/corpus_data/", input$dirCorp$name, "/processed", "/corpus"))
     dir.create(paste0(getwd(),"/data/corpus_data/", input$dirCorp$name, "/processed", "/terminology"))
     
+    MTDT <- data.frame("TamanoMB" = toString(object.size(df)/ 1000000), "Nombre" = toString(input$dirCorp$name), "Pag" = "NA", Creacion = as.character(Sys.Date()), "Modif" = as.character(Sys.Date()), "Datos" = "Corpus subido/Importado a la plataforma. No existen datos acerca de los documentos originales")
+    
+    
     colnames(df)[1] <- "doc_id"
     colnames(df)[2] <- "text"
     
@@ -275,10 +278,12 @@ function(input, output, session) {
     print("parar")
     
     df <- corpus(df)
-    
+    #tokens <- tokens(df)
+
     #Guardado de datos
-    saveRDS(input$dirCorp, paste0(getwd(),"/data/corpus_data/" ,input$dirCorp$name,"/processed/corpus/metadata.rds"))
+    saveRDS(MTDT, paste0(getwd(),"/data/corpus_data/" ,input$dirCorp$name,"/processed/corpus/metadata.rds"))
     saveRDS(df, paste0(getwd(),"/data/corpus_data/" ,input$dirCorp$name,"/processed/corpus/corpus.rds"))
+    #saveRDS(tokens, paste0(getwd(),"/data/corpus_data/" ,input$dirCorp$name,"/processed/corpus/tokens.rds"))
     
     #Actualizamos las listas de corpus
     corpusList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/"), recursive = FALSE))
@@ -390,10 +395,11 @@ function(input, output, session) {
     
     observeEvent(input$dtTermsRaw_rows_selected, {
       output$dtTerms = DT::renderDataTable({
-        df <- kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1])) %>% select(1,4,5,6)
+        df <- kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1]), window = 20) %>% select(1,4,5,6)
         df[,1] <- gsub("_", " ", df[,1])
         df$context <- paste(df[,2],toupper(df[,3]),df[,4])
-        df %>% select(1,5)
+        df <- df %>% select(1,5)
+        unique(df)
       })
     })
     
@@ -422,7 +428,9 @@ function(input, output, session) {
     
     dtMetadata <<- readRDS(paste0(corpusPathSession, "/processed/corpus/metadata.rds"))
     corp <<- readRDS(paste0(corpusPathSession, "/processed/corpus/corpus.rds"))
-
+    #tokens <<- readRDS(paste0(corpusPathSession, "/processed/corpus/tokens.rds"))
+    
+    
     termList <- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/",currentCorpus,"/processed/terminology/"), recursive = FALSE))
 
     if(length(termList) == 0){
@@ -480,12 +488,7 @@ function(input, output, session) {
                             choices = termList,
                             selected = termList[1]
     )
-    print("Tokens")
-    tic()
-    tokens <- tokens(corp)
     ntokens <- ntoken(corp)
-    saveRDS(tokens, paste0(corpusPathSession, "/processed/corpus/tokens.rds"))
-    toc()
     
     #DATOS DE TERMINOLOGÍA
     output$TermExtracted = DT::renderDataTable({
@@ -503,10 +506,11 @@ function(input, output, session) {
     
     observeEvent(input$dtTermsRaw_rows_selected, {
       output$dtTerms = DT::renderDataTable({
-        df <- kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1])) %>% select(1,4,5,6)
+        df <- kwic(corp, pattern = phrase(tableTerms[input$dtTermsRaw_rows_selected,1]), window = 20) %>% select(1,4,5,6)
         df[,1] <- gsub("_", " ", df[,1])
         df$context <- paste(df[,2],toupper(df[,3]),df[,4])
-        df %>% select(1,5)
+        df <- df %>% select(1,5)
+        unique(df)
       })
     })
     
@@ -528,10 +532,28 @@ function(input, output, session) {
     #Terminología Actual
     output$termSelected <- renderText({ input$termOpt })
     
+    #Datos estadisticos/Metadatos
     output$corpSize <- renderText({ object.size(corp) / 1000000 })
-    output$docSize <- renderText({ sum(dtMetadata$TamanoMB) })
+    
+    output$docSize <- renderText({
+      if(nrow(dtMetadata) == 1) {
+        as.character(dtMetadata[1,"TamanoMB"])
+      } else {
+        sum(dtMetadata$TamanoMB)
+      }
+      })
+    
     output$tokenSize <- renderText({ sum(ntokens) })
-    output$pageTotal <- renderText({ sum(as.integer(dtMetadata$Pag)) })
+    
+    output$pageTotal <- renderText({ 
+      
+      dtMetadata %>% filter(!is.na(as.integer(dtMetadata$Pag))) -> x
+      
+      sum(as.integer(x$Pag))
+      
+      })
+    
+    output$numDocs <- renderText({ nrow(dtMetadata) })
     
     output$docAdd <- renderUI({
       fileInput("docAdd", label = "Añadir documentos", multiple = TRUE)
@@ -567,7 +589,7 @@ function(input, output, session) {
     updateSelectizeInput(session, 'search', choices = reactiveListTerm$data, server = TRUE, options = list(placeholder = 'Insertar términos de búsqueda', create = TRUE,                                                                                                          delimiter = '/n', create = I("function(input, callback){return {value: input, text: input};}")))
   })
   
-  
+  #Añadir un termino a la terminología
   observeEvent(input$addTerm, {
     if(input$user == "") {
       showModal(
@@ -617,6 +639,7 @@ function(input, output, session) {
       }}
   })
   
+  #Eliminar un termino de la terminología
   observeEvent(input$removeTerm, {
     if(input$user == "") {
       showModal(
@@ -652,6 +675,7 @@ function(input, output, session) {
       }}
   })
   
+  #Cambiador de patron en creacion de terminología
   observe({
     x <- input$paternType
     
@@ -661,28 +685,30 @@ function(input, output, session) {
                         choices = c("(A|N)*N(P+D*(A|N)*N)*",
                                     "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)",
                                     "N"),
-                        selected = tail(x, 1)
+                        selected = "(A|N)*N(P+D*(A|N)*N)*"
       )
     } else if(input$paternType == "upos"){
       updateSelectInput(session, "patern",
                         label = NULL,
                         choices = c("((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON)(ADP+DET*((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON))*",
                                     "NOUN|PROPN|PRON|NOUNADPDETNOUN|PROPNPROPN|ADJNOUN|NUMNOUN|PROPNPROPNPROPN|PROPNPROPNPROPNPROPN|NOUNPRON|NUMPROPN|NOUNPROPN"),
-                        selected = tail(x, 1)
+                        selected = "((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON)(ADP+DET*((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON))*"
       )
     } else {
       updateSelectInput(session, "patern",
                         label = NULL,
                         choices = c("No se puede proporcionar patrones al metodo RAKE"),
-                        selected = tail(x, 1)
+                        selected = "No se puede proporcionar patrones al metodo RAKE"
       )
     }
   })
   
+  #Mantener en seleccion el termino escogido en la tabla
   observeEvent(input$dtTerminology_rows_selected, {
     updateTextInput(session,"modifyTermText", label = NULL, value=tableTerms[input$dtTerminology_rows_selected[1], "keyword"])
   })
   
+  #Modificar termino
   observeEvent(input$modifyTerm, {
     if(input$user == "") {
       showModal(
@@ -751,6 +777,7 @@ function(input, output, session) {
         }}}
   })
   
+  #Mostrar el historico de los cambios realizados a la terminología
   observeEvent(input$seeListChanges,{
     showModal(
       modalDialog(
@@ -761,6 +788,7 @@ function(input, output, session) {
       ))
   })
   
+  #Cerrar la aplicacion: Guardamos los cambios.
   session$onSessionEnded(function() {
     
     if(!emptyCorpus){

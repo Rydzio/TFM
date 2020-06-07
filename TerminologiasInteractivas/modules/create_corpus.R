@@ -94,9 +94,18 @@ createCorpus <- function(ruta, nameCorpus, nThreads, encoding){
   quancorpusDocs <- corpus(docs)
   toc()
 
+  #Extraemos los tokens y los guardamos
+  #print("Extrayendo tokens: ")
+  #tic()
+  #tokens <- tokens(quancorpusDocs)
+  #toc()
+  
+  
   #Guardado de datos
   saveRDS(metadata, paste0(getwd(),"/data/corpus_data/" ,nameCorpus,"/processed/corpus/metadata.rds"))
   saveRDS(quancorpusDocs, paste0(getwd(),"/data/corpus_data/" ,nameCorpus,"/processed/corpus/corpus.rds"))
+  #saveRDS(tokens, paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed/corpus/tokens.rds"))
+  
   
   print("¡corpus creado con exito!")
 }

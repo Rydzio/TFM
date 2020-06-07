@@ -267,13 +267,14 @@ fluidPage(
                                )
                       ),
                       tabPanel("Datos estadisticos", value = "stat", icon = icon("list"),
-                               h4("Información estadistica relacionada con el corpus inicial de los documentos."),
+                               h4("Información estadistica relacionada con el corpus de los documentos."),
                                br(),
                                wellPanel(
                                  fluidRow(
                                    column(6,
-                                          p("Tamaño del corpus:", span(textOutput("corpSize", inline = TRUE), style = "font-weight:bold"), "Mb"),
-                                          p("Tamaño de los documentos originales:", span(textOutput("docSize", inline = TRUE), style = "font-weight:bold"), "Mb")
+                                          p("Tamaño del corpus:", span(textOutput("corpSize", inline = TRUE), style = "font-weight:bold"), "MB"),
+                                          p("Tamaño de los documentos originales:", span(textOutput("docSize", inline = TRUE), style = "font-weight:bold"), "MB"),
+                                          p("Numero de documentos: ", span(textOutput("numDocs", inline = TRUE), style = "font-weight:bold"), "Documentos")
                                           ),
                                    column(6,
                                           p("Cantidad total de tokens:", span(textOutput("tokenSize", inline = TRUE), style = "font-weight:bold"), "tokens"),

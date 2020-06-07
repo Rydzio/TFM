@@ -55,7 +55,7 @@ dtMetadata <<- readRDS(paste0(corpusPath, "/processed/corpus/metadata.rds"))
 corp <<- readRDS(paste0(corpusPath, "/processed/corpus/corpus.rds"))
 
 corpSize <- object.size(corp)
-tokens <- tokens(corp)
+#tokens <- tokens(corp)
 ntokens <- ntoken(corp)
 
 termsList <<- tableTerms$Terminos
