@@ -1,10 +1,10 @@
 ---
 title: "Extraccion de terminos TFM"
 output:
-  word_document: default
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
+  word_document: default
 ---
 
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
@@ -30,9 +30,9 @@ hilos = 8
 #Ruta de trabajo
 setwd("~/TFM")
 
-ruta = "/doc"
+#ruta = "/doc"
 
-#ruta = "/legal"
+ruta = "/legal"
 
 #ruta = "/Users/pedrohv/TFM/TerminologíasInteractivas/data/covid19/raw/documents"
 
@@ -88,7 +88,7 @@ toc()
 ```
 
 
-
+Extraemos las keyword a traves de POS pattern
 ```{r}
 x$phrase_tag <- as_phrasemachine(x$upos, 
                                  type = "upos" #Puede ser tambiÃ©n "penn-treebank"
@@ -105,8 +105,7 @@ statsPOS
 ```
 
 
-
-
+Extracción de keywords a traves de POS pattern pero realizada en cada uno de los documentos del corpus de manera individual
 ```{r}
 library(dplyr)
 
@@ -121,7 +120,7 @@ split(x, x$doc_id) -> xSplit
 
 for (doc_id in xSplit) {
 
-  statsPOS <- keywords_phrases(x = doc_id$phrase_tag, 
+  statstTemp <- keywords_phrases(x = doc_id$phrase_tag, 
                           term = tolower(doc_id$lemma), 
                           pattern = "(A|N)*N(P+D*(A|N)*N)*",
                           is_regex = TRUE, 
@@ -129,7 +128,7 @@ for (doc_id in xSplit) {
                         
   )
 
-  cbind(rep(doc_id$doc_id[1], nrow(statsPOS)), statsPOS) ->> statsPOS2
+  cbind(rep(doc_id$doc_id[1], nrow(statstTemp)), statstTemp) ->> statsPOS2
   
   colnames(statsPOS2)[1] <- "doc_id"
   
@@ -154,7 +153,7 @@ statsPOSSplit
 ```
 
 
-```{r, fig.width = 20, fig.height = 24}
+```{r, fig.width = 20, fig.height = 10}
 library(ggplot2)
 
 ggplot(statsPOSSplit, aes(freq/total, fill = doc_id)) +
@@ -162,6 +161,7 @@ ggplot(statsPOSSplit, aes(freq/total, fill = doc_id)) +
   xlim(NA, 0.0009) +
   facet_wrap(~doc_id, ncol = 4, scales = "free_y")
 ```
+
 
 ```{r}
 freq_by_rank <- statsPOSSplit %>% 
@@ -192,8 +192,8 @@ statsPOSSplit <- statsPOSSplit %>%
 statsPOSSplit
 ```
 
-
-```{r, fig.width = 20, fig.height = 10}
+Presentamos los terminos con mayors puntuación tf_idf en función del documento en el que aparecen en una serie de histogramas
+```{r, fig.width = 20, fig.height = 40}
 statsPOSSplit %>%
   arrange(desc(tf_idf)) %>%
   mutate(keyword = factor(keyword, levels = rev(unique(keyword)))) %>% 
@@ -207,7 +207,7 @@ statsPOSSplit %>%
   coord_flip()
 ```
 
-RAKE
+RAKE Score para las palabras divididas en funhción del documento al que pertenecen
 ```{r}
 probando <- strsplit(statsPOSSplit$keyword, split = " ")
 data.frame(splited = unlist(probando)) -> probando
@@ -216,9 +216,7 @@ table(probando) -> tabla
 tabla <- data.frame(tabla)
 ```
 
-
-
-
+Puntuación RAKE dividida por documentos
 ```{r}
 score = c()
 
@@ -245,7 +243,7 @@ for (keyIndex in 1:nrow(statsPOSSplit)) {
 ```
 
 
-
+Presentamos las palabras con mayor puntuación RAKE divididas en función de los documentos en las que aparecen en una tabla
 ```{r}
 
 cbind(statsPOSSplit, score) -> statsPOSRAKE
@@ -255,6 +253,83 @@ statsPOSRAKE
 ```
 
 
+Presentamos las palabras con mayor puntuación RAKE divididas en función de los documentos en las que aparecen en una serie de histogramas
+```{r, fig.width = 20, fig.height = 40}
+library(ggplot2)
+
+statsPOSRAKE %>%
+  arrange(desc(RAKE)) %>%
+  mutate(keyword = factor(keyword, levels = rev(unique(keyword)))) %>% 
+  group_by(doc_id) %>% 
+  top_n(15) %>% 
+  ungroup() %>%
+  ggplot(aes(keyword, RAKE, fill = doc_id)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = NULL, y = "RAKE") +
+  facet_wrap(~doc_id, ncol = 2, scales = "free") +
+  coord_flip()
+```
+
+
+RAKE score para el conjunto del corpus completo.
+```{r}
+probandoPOS <- strsplit(statsPOS$keyword, split = " ")
+data.frame(splited = unlist(probandoPOS)) -> probandoPOS
+
+table(probandoPOS) -> tablaPOS
+tablaPOS <- data.frame(tablaPOS)
+```
+
+
+Extraccion de RAKE para todos los terminos del corpus completo
+```{r}
+score = c()
+
+for (keyIndex in 1:nrow(statsPOS)) {
+  
+  if(statsPOS[keyIndex, "ngram"] == 1){
+    score <- append(score, 0)
+  } else {
+
+    keySplt <- strsplit(statsPOS[keyIndex, "keyword"], " ")
+    keyDegree <<- statsPOS[keyIndex, "ngram"] - 1
+  
+    tempScore <- c()
+    for(word in keySplt){
+      
+      tempScore <- append(tempScore, keyDegree / tablaPOS[tablaPOS$probandoPOS %in% word, ]$Freq)
+      
+    }
+    score <- append(score, sum(tempScore))
+  }
+}
+
+
+```
+
+
+Unimos el resultado de la puntuación RAKE y presentamos la tabla
+```{r}
+
+cbind(statsPOS, score) -> statsPOSRAKEScore
+colnames(statsPOSRAKEScore)[4] <- "RAKE"
+statsPOSRAKEScore <- statsPOSRAKEScore[order(-statsPOSRAKEScore$RAKE),]
+statsPOSRAKEScore
+```
+
+Presentamos las keywords de todo el corpus puntuadas a través de RAKE en un histograma
+```{r, fig.width = 20, fig.height = 10}
+library(forcats)
+
+statsPOSRAKEScore %>%
+  mutate(keyword = fct_reorder(keyword, RAKE)) %>%
+  top_n(50) %>% 
+  ggplot() + geom_col(aes(x = keyword, y = RAKE), position = "dodge") + 
+  coord_flip()
+```
+
+
+RAKE normal. La extraccion a través de RAKE conjuntamente con la puntuación RAKE.
 ```{r}
 stats <- keywords_rake(x = x, 
                        term = "lemma", 
@@ -263,29 +338,22 @@ stats <- keywords_rake(x = x,
 stats
 ```
 
-C-value
+
+C-value para el conjunto del corpus completo.
 ```{r}
 statsPOS <- statsPOS[order(statsPOS$freq),]
 
 cValue <- c()
 
 for (keyIndex in 1:nrow(statsPOS)) {
-  
   #Extraemos el termino candidato
   candidate <- statsPOS[keyIndex, "keyword"]
   #Extraemos la frecuencia del candidato en el corpùs
   freqCandidate <- statsPOS[keyIndex, "freq"]
   
-  #Buscamos terminos que contengan a nuestro candidato
-  coincidencias <- c()
-  for (candidateMatchIndex in 1:nrow(statsPOS)) {
-    candidateMatch <- statsPOS[candidateMatchIndex, "keyword"]
-    
-    if( grepl(candidate ,candidateMatch , ignore.case = FALSE, fixed = TRUE)){
-      append(coincidencias, candidateMatch) -> coincidencias
-    }
-    
-  }
+  #Buscamos terminos que contengan a nuestro candidato. Tarda o.2 segundos de media por iteracción. 
+  coincidencias <- statsPOS[grepl(candidate ,statsPOS$keyword), ]$keyword
+
   #Numero de coincidencias
   ncoincidencias <- length(coincidencias)
   if(ncoincidencias == 1){
@@ -311,24 +379,29 @@ for (keyIndex in 1:nrow(statsPOS)) {
 print("fin")
 
 cbind(statsPOS, cValue) -> statsPOSCVALUE
-colnames(statsPOSCVALUE)[4] <- "c-value"
+colnames(statsPOSCVALUE)[4] <- "cvalue"
 
 ```
 
-
-
-
-
+Ordenamos la tabla y la presentamos
 ```{r}
 
-statsPOSCVALUE <- statsPOSCVALUE[order(-statsPOSCVALUE$"c-value"),]
+statsPOSCVALUE <- statsPOSCVALUE[order(-statsPOSCVALUE$cvalue),]
 
 statsPOSCVALUE
 
 ```
 
+Presentamos las keyword ordenadas por c-value en una grafica de histogramas
+```{r, fig.width = 20, fig.height = 10}
+library(forcats)
 
-
+statsPOSCVALUE %>%
+  mutate(keyword = fct_reorder(keyword, cvalue)) %>%
+  top_n(50) %>% 
+  ggplot() + geom_col(aes(x = keyword, y = cvalue), position = "dodge") + 
+  coord_flip()
+```
 
 
 
