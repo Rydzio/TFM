@@ -96,7 +96,7 @@ x$phrase_tag <- as_phrasemachine(x$upos,
 tic()
 statsPOS <- keywords_phrases(x = x$phrase_tag, 
                           term = tolower(x$token), 
-                          pattern = "N(A|N)*N(PD*(A|N)*)*",
+                          pattern = "N(A|N)*(PD*N(A|N)*)*",
                           is_regex = TRUE, 
                           detailed = FALSE 
 )
@@ -117,12 +117,11 @@ statsPOS2 <- data.frame()
 statsPOSSplit <- data.frame()
 split(x, x$doc_id) -> xSplit
 
-
 for (doc_id in xSplit) {
 
   statstTemp <- keywords_phrases(x = doc_id$phrase_tag, 
-                          term = tolower(doc_id$lemma), 
-                          pattern = "N(A|N)*N(PD*(A|N)*)*",
+                          term = tolower(doc_id$token), 
+                          pattern = "N(A|N)*(PD*N(A|N)*)*",
                           is_regex = TRUE, 
                           detailed = FALSE 
                         
@@ -133,7 +132,6 @@ for (doc_id in xSplit) {
   colnames(statsPOS2)[1] <- "doc_id"
   
   rbind(statsPOS2, statsPOSSplit) ->> statsPOSSplit
-  
 }
 toc()
 statsPOSSplit
@@ -219,6 +217,7 @@ tabla <- data.frame(tabla)
 Puntuación RAKE dividida por documentos
 ```{r}
 score = c()
+pb = txtProgressBar(min = 0, max = nrow(statsPOSSplit), initial = 0)
 
 for (keyIndex in 1:nrow(statsPOSSplit)) {
   
@@ -237,6 +236,7 @@ for (keyIndex in 1:nrow(statsPOSSplit)) {
     }
     score <- append(score, sum(tempScore))
   }
+  setTxtProgressBar(pb,keyIndex)
 }
 
 
@@ -284,6 +284,7 @@ tablaPOS <- data.frame(tablaPOS)
 Extraccion de RAKE para todos los terminos del corpus completo
 ```{r}
 score = c()
+pb = txtProgressBar(min = 0, max = nrow(statsPOS), initial = 0)
 
 for (keyIndex in 1:nrow(statsPOS)) {
   
@@ -302,6 +303,7 @@ for (keyIndex in 1:nrow(statsPOS)) {
     }
     score <- append(score, sum(tempScore))
   }
+  setTxtProgressBar(pb,keyIndex)
 }
 
 
@@ -340,13 +342,9 @@ stats
 
 
 C-value para el conjunto del corpus completo.
-
-**OJO
-Aquí hay un problema grave con el tiempo de carga. El algoritmo para calcular c-value requiere obtener todos aquellos terminos en los que se contenga una palabra, esto es: Para calcular el c-value de "se", se requiere obtener todos y cada uno de los terminos que contengan la palabra "se", como por ejemplo ""
-
-
 ```{r}
 statsPOS <- statsPOS[order(statsPOS$freq),]
+pb = txtProgressBar(min = 0, max = nrow(statsPOS), initial = 0)
 
 cValue <- c()
 tic()
@@ -356,7 +354,7 @@ for (keyIndex in 1:nrow(statsPOS)) {
   #Extraemos la frecuencia del candidato en el corpùs
   freqCandidate <- statsPOS[keyIndex, "freq"]
 
-  #Buscamos terminos que contengan a nuestro candidato. Tarda 0.02 segundos de media por iteracción en un i9-9880H en un termino normal. Con un termino MUY frecuente,      puede tardar minutos! No parece haber ninguna forma de calcular mas eficientemente esta característica.
+  #Buscamos terminos que contengan a nuestro candidato. 
   coincidencias <- statsPOS[grepl(candidate ,statsPOS$keyword, fixed = TRUE), ]
 
   #Numero de coincidencias
@@ -373,6 +371,7 @@ for (keyIndex in 1:nrow(statsPOS)) {
     #Almacenamos el resultado
     append(cValue, res) -> cValue 
   }
+  setTxtProgressBar(pb,keyIndex)
 }
 toc()
 print("fin")
