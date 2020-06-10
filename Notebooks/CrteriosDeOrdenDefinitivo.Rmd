@@ -55,6 +55,8 @@ print("Se han leido los documentos del corpus con éxito")
 Creamos el corpus de quanteda
 ```{r}
 library(quanteda)
+library(stringr)
+
 tic()
 # create quanteda corpus
 quanteda_options(threads = hilos)
@@ -70,6 +72,21 @@ sum(summ$Tokens)
 tDocs <- texts(quancorpusDocs) #No tarda nada. 
                        #Un vector nombrado (cada elemento tiene el nombre del doc). 
                        #Cada elemento es una cadena con el texto del doc.
+
+#Con este proceso limpiamos bien los documentos de caracteres extraños producidos por un error de lectura.
+tDocs2 <- str_replace_all(tDocs, c("\001" = "",
+                          "\002" = "",
+                          "\003" = "",
+                          "\004" = "",
+                          "\005" = "",
+                          "\006" = "",
+                          "\f" = ""
+                          )
+                     )
+
+#Debemos volver a establecer los nombres de los documentos, al limpiar los textos se pierden.
+attr(tDocs2, 'names') <- attr(tDocs, 'names')
+
 toc()
 ```
 
@@ -78,12 +95,13 @@ Descargamos el modelo udpipe de Google y extraemos los terminos.
 ```{r}
 library(udpipe)
 
+
 model <- udpipe_download_model(language = "spanish")
 
 path <- model$file_model
 
 tic()
-x <- udpipe(tDocs, path, parallel.cores = hilos)
+x <- udpipe(tDocs2, path, parallel.cores = hilos)
 toc()
 ```
 
@@ -118,7 +136,6 @@ statsPOSSplit <- data.frame()
 split(x, x$doc_id) -> xSplit
 
 for (doc_id in xSplit) {
-
   statstTemp <- keywords_phrases(x = doc_id$phrase_tag, 
                           term = tolower(doc_id$token), 
                           pattern = "N(A|N)*(PD*N(A|N)*)*",
@@ -187,8 +204,9 @@ library(tidytext)
 statsPOSSplit <- statsPOSSplit %>%
   bind_tf_idf(keyword, doc_id, freq)
 
-statsPOSSplit
+statsPOSSplit[order(statsPOSSplit$keyword),]
 ```
+
 
 Presentamos los terminos con mayors puntuación tf_idf en función del documento en el que aparecen en una serie de histogramas
 ```{r, fig.width = 20, fig.height = 40}
@@ -204,6 +222,27 @@ statsPOSSplit %>%
   facet_wrap(~doc_id, ncol = 2, scales = "free") +
   coord_flip()
 ```
+
+
+TF_IDF para el corpus completo
+```{r}
+statsPOSTF_IDF <- select(statsPOSSplit, -c(doc_id, tf, idf, total))
+statsPOSTF_IDF <- aggregate(statsPOSTF_IDF$tf_idf, by=list(keyword=statsPOSTF_IDF$keyword), FUN=sum)
+colnames(statsPOSTF_IDF)[2] <- "tf_idf"
+statsPOSTF_IDF
+```
+
+Lo presentamos en un histograma
+```{r, fig.width = 20, fig.height = 10}
+library(forcats)
+
+statsPOSTF_IDF %>%
+  mutate(keyword = fct_reorder(keyword, tf_idf)) %>%
+  top_n(50) %>% 
+  ggplot() + geom_col(aes(x = keyword, y = tf_idf), position = "dodge") + 
+  coord_flip()
+```
+
 
 RAKE Score para las palabras divididas en funhción del documento al que pertenecen
 ```{r}
