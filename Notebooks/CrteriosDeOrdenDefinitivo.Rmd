@@ -158,6 +158,19 @@ statsPOSSplit
 
 
 ```{r}
+
+probando <- select(statsPOSSplit, -c(doc_id))
+
+probando <- aggregate(statsPOSSplit$freq, by=list(keyword=statsPOSSplit$keyword, ngram=statsPOSSplit$ngram), FUN=sum)
+colnames(probando)[3] <- "freq"
+
+probando[order(-probando$freq),]
+
+```
+
+
+
+```{r}
 total_words <- statsPOSSplit %>% 
   group_by(doc_id) %>% 
   summarize(total = sum(freq))

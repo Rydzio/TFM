@@ -280,9 +280,9 @@ ggplot(data=cumdf,
 Tranformacion de UPOS a POS
 ```{r}
 upos <- c("NOUN","ADP","DET","PUNCT","ADJ","PROPN","VERB","NUM","CCONJ","PRON","SCONJ","ADV","AUX","X","SYM","PART","INTJ")
+upos
 as_phrasemachine(upos)
 ```
-
 
 Patron con UPOS
 ```{r}
@@ -291,10 +291,25 @@ statsUPOS <- keywords_phrases(x = x$upos,
                           #pattern = "(DET|NOUN|ADJ)|(PROPN|NOU|NADJ|AUX)",
                           pattern = "((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON)(ADP+DET*((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON))*", #SNP for UPOS
                           is_regex = TRUE, 
-                          detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
+                          detailed = FALSE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
                          )
 
 #((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON)(ADP+DET*((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON))*
+statsUPOS
+```
+
+Patron con UPOS
+```{r}
+statsUPOS <- keywords_phrases(x = x$upos, 
+                          term = tolower(x$token), 
+                          #pattern = "(DET|NOUN|ADJ)|(PROPN|NOU|NADJ|AUX)",
+                          pattern = "(NOUN|PROPN|PRON)&((ADJ|NUM)|(NOUN|PROPN|PRON))*((ADP)(DET)*(NOUN|PROPN|PRON)((ADJ|NUM)|(NOUN|PROPN|PRON))*)* ", #SNP for UPOS
+                          is_regex = TRUE, 
+                          detailed = FALSE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
+                         )
+
+#((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON)(ADP+DET*((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON))*
+statsUPOS
 ```
 
 
@@ -503,6 +518,22 @@ x$phrase_tag <- as_phrasemachine(x$upos,
 
 statsPOS <- keywords_phrases(x = x$phrase_tag, 
                           term = tolower(x$token), 
+                          pattern = "N(A|N)*(PD*N(A|N)*)*",
+                          is_regex = TRUE,
+                          detailed = FALSE 
+                          )
+statsPOS
+```
+
+
+
+```{r}
+x$phrase_tag <- as_phrasemachine(x$upos, 
+                                 type = "upos" #Puede ser tambiÃ©n "penn-treebank"
+                                )#Convierte los tags de upos a phrasemachine (Handler 2016). 
+
+statsPOS <- keywords_phrases(x = x$phrase_tag, 
+                          term = tolower(x$token), 
                           pattern = "(A|N)*N(P+D*(A|N)*N)*", #Default simple noun phrase. See manual.
                           #pattern = "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)", #From manual. Noun phrase with coordination conjuction. Este patrón es capaz de extraer ligeramente mas cantidad de terminos, pero tambien tarda una cantidad de tiempo mayor.
                           #See also this package to know who/why and how is a full noun phrase.
@@ -512,10 +543,11 @@ statsPOS <- keywords_phrases(x = x$phrase_tag,
                           is_regex = TRUE, 
                           #ngram_max. Por defecto es 8. It is an integer indicating to allow phrases to be found up to ngram maximum number of terms following each other. Only used if is_regex is set to TRUE.
                           #sep = " ". Character indicating how to collapse the phrase of terms which are found. Defaults to using a space.
-                          detailed = TRUE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
+                          detailed = FALSE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
                                           #With TRUE you get keyword, ngran, pattern, start, end
                                           #With FALSE you get keyword, ngram, freq, key
                          )
+statsPOS
 ```
 
 

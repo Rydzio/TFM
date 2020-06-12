@@ -20,6 +20,7 @@ library(sos)
 library(dplyr)
 library(plyr)
 library(shinybusy)
+library(tidytext)
 
 library(udpipe)
 

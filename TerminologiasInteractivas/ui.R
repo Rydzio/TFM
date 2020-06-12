@@ -49,7 +49,7 @@ fluidPage(
                                  ),
                                  column(6, 
                                         wellPanel(
-                                          fluidRow(radioGroupButtons("termOpt", label = h4(("Seleccione el Corpus sobre el que desea trabajar:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
+                                          fluidRow(radioGroupButtons("termOpt", label = h4(("Seleccione la terminología sobre la que desea trabajar:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
                                         )
                                  ),
                                ), br(),
@@ -132,10 +132,11 @@ fluidPage(
                                             column(6,
                                                    h5(strong("Patrón:")),
                                                    selectizeInput("patern", label = NULL, 
-                                                                  choices = c("(A|N)*N(P+D*(A|N)*N)*",
+                                                                  choices = c("N(A|N)*(PD*N(A|N)*)*",
+                                                                              "(A|N)*N(P+D*(A|N)*N)*",
                                                                               "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)",
                                                                               "N"),
-                                                                  selected = "(A|N)*N(P+D*(A|N)*N)*"
+                                                                  selected = "N(A|N)*(PD*N(A|N)*)*"
                                                                   )
                                                    )
                                           ),
@@ -307,7 +308,34 @@ fluidPage(
                       ),
                       tabPanel("Comparar Terminologías", value = "CompTerm", icon = icon("less-than"),
                                h5("Aquí irá el sistema comparativo de terminologías interactivo"),
-                               
+                               fluidRow(
+                                 column(6,
+                                        wellPanel(
+                                          style = "background: white",
+                                          h4("Tabla con los términos actuales:"),
+                                          fluidRow(radioGroupButtons("termComp1", label = h4(("Seleccione una terminologia para comparar:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
+                                          dataTableOutput("tdTermsComp1")
+                                        )
+                                 ),
+                                 column(6,
+                                        wellPanel( 
+                                          style = "background: white",
+                                          h4("Tabla con los términos en contexto:"),
+                                          fluidRow(radioGroupButtons("termComp2", label = h4(("Seleccione otra terminologia para comparar:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
+                                          dataTableOutput("tdTermsComp2")
+                                        )
+                                 )
+                               ),
+                               wellPanel(
+                                 fluidRow(
+                                   column(6,
+                                          p("Se han seleccionado:", span(textOutput("dtComp1Rows", inline = TRUE), style = "font-weight:bold"), "Terminos erroneos en la Terminología 1"),
+                                   ),
+                                   column(6,
+                                          p("Se han seleccionado:", span(textOutput("dtComp2Rows", inline = TRUE), style = "font-weight:bold"), "Terminos erroneos en la Terminología 1"),
+                                   ),
+                                 ),
+                               ),
                       ),
                       tags$head(tags$style(HTML('#search+ div>.selectize-input{min-width: 300px; max-width:100%; !important;}')))
   )))

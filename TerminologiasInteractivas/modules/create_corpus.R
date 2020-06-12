@@ -94,12 +94,21 @@ createCorpus <- function(ruta, nameCorpus, nThreads, encoding){
   quancorpusDocs <- corpus(docs)
   toc()
 
-  #Extraemos los tokens y los guardamos
-  #print("Extrayendo tokens: ")
-  #tic()
-  #tokens <- tokens(quancorpusDocs)
-  #toc()
-  
+  #Limpiamos los textos del corpus de caracteres extraños que empeoren nuestra extracción de terminos.
+  print("Limpiando el corpus: ")
+  tic()
+  quancorpusDocsClean <- str_replace_all(quancorpusDocs, c("\001" = "",
+                                     "\002" = "",
+                                     "\003" = "",
+                                     "\004" = "",
+                                     "\005" = "",
+                                     "\006" = "",
+                                     "\f" = "")
+  )
+  #Debemos volver a establecer los nombres de los documentos, al limpiar los textos se pierden.
+  attr(quancorpusDocsClean, 'names') <- attr(quancorpusDocs, 'names')
+  quancorpusDocs <- quancorpusDocsClean
+  toc()
   
   #Guardado de datos
   saveRDS(metadata, paste0(getwd(),"/data/corpus_data/" ,nameCorpus,"/processed/corpus/metadata.rds"))

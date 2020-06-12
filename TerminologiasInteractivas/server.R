@@ -85,6 +85,18 @@ function(input, output, session) {
                               choices = termList
       )
       
+      updateRadioGroupButtons(session, 
+                              "termComp1", 
+                              label = NULL, 
+                              choices = termList
+      )
+      
+      updateRadioGroupButtons(session, 
+                              "termComp2", 
+                              label = NULL, 
+                              choices = termList
+      )
+      
       updateSelectInput(session, "TermForDownload",
                         choices = termList)
       }
@@ -188,6 +200,8 @@ function(input, output, session) {
           print(termList)
           
           updateRadioGroupButtons(session, 'termOpt', label = NULL, choices = termList, selected = termList[1])
+          updateRadioGroupButtons(session, 'termComp1', label = NULL, choices = termList, selected = termList[1])
+          updateRadioGroupButtons(session, 'termComp2', label = NULL, choices = termList, selected = termList[1])
           updateSelectInput(session, "TermForDownload",
                             choices = termList,
                             selected = termList[1])
@@ -277,7 +291,18 @@ function(input, output, session) {
     
     print("parar")
     
-    df <- corpus(df)
+    dftmp <- corpus(df)
+    df <- str_replace_all(dftmp, c("\001" = "",
+                                   "\002" = "",
+                                   "\003" = "",
+                                   "\004" = "",
+                                   "\005" = "",
+                                   "\006" = "",
+                                   "\f" = "")
+    )
+    #Debemos volver a establecer los nombres de los documentos, al limpiar los textos se pierden.
+    attr(df, 'names') <- attr(dftmp, 'names')
+    
     #tokens <- tokens(df)
 
     #Guardado de datos
@@ -321,6 +346,9 @@ function(input, output, session) {
     df$keyword <- as.character(df$keyword)
     
     
+    
+    
+    
     #Guardado de datos
     saveRDS(df, paste0(getwd(), "/data/corpus_data/", currentCorpus, "/processed/terminology/",input$dirTerm$name,"/terminology.rds"))
     saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", currentCorpus, "/processed/terminology/",input$dirTerm$name,"/terminologyFull.rds"))
@@ -332,6 +360,16 @@ function(input, output, session) {
     
     updateRadioGroupButtons(session, 
                             "termOpt", 
+                            label = NULL, 
+                            choices = termList
+    )
+    updateRadioGroupButtons(session, 
+                            "termComp1", 
+                            label = NULL, 
+                            choices = termList
+    )
+    updateRadioGroupButtons(session, 
+                            "termComp2", 
                             label = NULL, 
                             choices = termList
     )
@@ -488,6 +526,18 @@ function(input, output, session) {
                             choices = termList,
                             selected = termList[1]
     )
+    updateRadioGroupButtons(session, 
+                            "termComp1", 
+                            label = NULL, 
+                            choices = termList,
+                            selected = termList[1]
+    )
+    updateRadioGroupButtons(session, 
+                            "termComp2", 
+                            label = NULL, 
+                            choices = termList,
+                            selected = termList[1]
+    )
     ntokens <- ntoken(corp)
     
     #DATOS DE TERMINOLOGÍA
@@ -501,7 +551,7 @@ function(input, output, session) {
     
     #Contextualizar Terminologías
     output$dtTermsRaw = DT::renderDataTable(
-      tableTerms %>% select(1,4),selection = 'single'
+      tableTerms %>% select(1,5),selection = 'single'
     )
     
     observeEvent(input$dtTermsRaw_rows_selected, {
@@ -603,7 +653,14 @@ function(input, output, session) {
       if(input$addTermText != "") {
         actualDate <- Sys.Date()
         print(colnames(tableTerms))
-        tableTermsModify <- rbind(tableTerms, data.frame("keyword" = input$addTermText, "Autor" = input$user, "Fecha" = actualDate, "Frecuencia" = "0"))
+        tableTermsModify <- rbind(tableTerms, data.frame("keyword" = input$addTermText, 
+                                                         "ngram" = length(strsplit(input$addTermText, " ")[[1]]), 
+                                                         "Autor" = input$user, 
+                                                         "Fecha" = actualDate, 
+                                                         "Frecuencia" = "0",
+                                                         "tf_idf" = "0",
+                                                         "RAKE" = "0",
+                                                         "cvalue" = "0"))
         if(dim(tableTermsModify[duplicated(tableTermsModify$keyword),])[1] >= 1) {
           showModal(
             modalDialog(
@@ -682,17 +739,19 @@ function(input, output, session) {
     if(input$paternType == "pos"){
       updateSelectInput(session, "patern",
                         label = NULL,
-                        choices = c("(A|N)*N(P+D*(A|N)*N)*",
+                        choices = c("N(A|N)*(PD*N(A|N)*)*",
+                                    "(A|N)*N(P+D*(A|N)*N)*",
                                     "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)",
                                     "N"),
-                        selected = "(A|N)*N(P+D*(A|N)*N)*"
+                        selected = "N(A|N)*(PD*N(A|N)*)*"
       )
     } else if(input$paternType == "upos"){
       updateSelectInput(session, "patern",
                         label = NULL,
-                        choices = c("((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON)(ADP+DET*((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON))*",
+                        choices = c("(NOUN|PROPN|PRON)((ADJ|NUM)|(NOUN|PROPN|PRON))*((ADP)(DET)*(NOUN|PROPN|PRON)((ADJ|NUM)|(NOUN|PROPN|PRON))*)*",
+                                    "((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON)(ADP+DET*((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON))*",
                                     "NOUN|PROPN|PRON|NOUNADPDETNOUN|PROPNPROPN|ADJNOUN|NUMNOUN|PROPNPROPNPROPN|PROPNPROPNPROPNPROPN|NOUNPRON|NUMPROPN|NOUNPROPN"),
-                        selected = "((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON)(ADP+DET*((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON))*"
+                        selected = "(NOUN|PROPN|PRON)((ADJ|NUM)|(NOUN|PROPN|PRON))*((ADP)(DET)*(NOUN|PROPN|PRON)((ADJ|NUM)|(NOUN|PROPN|PRON))*)*"
       )
     } else {
       updateSelectInput(session, "patern",
@@ -786,6 +845,49 @@ function(input, output, session) {
         })
         
       ))
+  })
+  
+  #Tablas comprarativas
+  #Primera
+  observeEvent(input$termComp1, {
+    
+    if(!emptyCorpus){
+      tableComp1 <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",input$termComp1,"/terminology.rds"))
+    }
+    
+    output$tdTermsComp1 = DT::renderDataTable(
+      tableComp1 %>% select(1,6,7,8)
+    )
+    
+  })
+  
+  # Reactive function to determine if a row is selected
+  sel <- reactive({!is.null(input$tdTermsComp1_rows_selected)})  
+  # Output result of reactive function sel
+  output$dtComp1Rows <- renderText({
+    #paste("Any rows selected: ", sel())
+    length(input$tdTermsComp1_rows_selected)
+  })
+
+  #Segunda
+  observeEvent(input$termComp2, {
+    
+    if(!emptyCorpus){
+      tableComp2 <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",input$termComp2,"/terminology.rds"))
+    }
+    
+    output$tdTermsComp2 = DT::renderDataTable(
+      tableComp2 %>% select(1,6,7,8)
+    )
+    
+  })
+  
+  # Reactive function to determine if a row is selected
+  sel <- reactive({!is.null(input$tdTermsComp2_rows_selected)})  
+  # Output result of reactive function sel
+  output$dtComp2Rows <- renderText({
+    #paste("Any rows selected: ", sel())
+    length(input$tdTermsComp2_rows_selected)
   })
   
   #Cerrar la aplicacion: Guardamos los cambios.
