@@ -21,6 +21,8 @@ library(dplyr)
 library(plyr)
 library(shinybusy)
 library(tidytext)
+library(stringr)
+
 
 library(udpipe)
 
@@ -32,7 +34,7 @@ source(paste0(getwd(), "/modules/create_corpus.R"))
 source(paste0(getwd(), "/modules/create_terminology.R"))
 source(paste0(getwd(), "/modules/add_documents.R"))
 
-hilos = 8
+hilos = 16
 emptyCorpus <- FALSE
 
 # Read config file

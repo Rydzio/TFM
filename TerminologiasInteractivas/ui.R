@@ -328,11 +328,14 @@ fluidPage(
                                ),
                                wellPanel(
                                  fluidRow(
-                                   column(6,
+                                   column(6, align = "center",
                                           p("Se han seleccionado:", span(textOutput("dtComp1Rows", inline = TRUE), style = "font-weight:bold"), "Terminos erroneos en la Terminología 1"),
                                    ),
-                                   column(6,
-                                          p("Se han seleccionado:", span(textOutput("dtComp2Rows", inline = TRUE), style = "font-weight:bold"), "Terminos erroneos en la Terminología 1"),
+                                   column(6, align = "center",
+                                          p("Se han seleccionado:", span(textOutput("dtComp2Rows", inline = TRUE), style = "font-weight:bold"), "Terminos erroneos en la Terminología 2"),
+                                   ),
+                                   column(12, align = "center",
+                                          p("El gradod e solapamiento entre las dos terminologías es de:", span(textOutput("Solapamiento", inline = TRUE), style = "font-weight:bold"), "Terminos"),
                                    ),
                                  ),
                                ),

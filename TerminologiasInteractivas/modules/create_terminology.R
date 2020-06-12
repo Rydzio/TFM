@@ -16,15 +16,8 @@
 #     the system.
 #-------------------------------------------------------------
 
-createTerminology <- function(quancorpusDocs, nameCorpus, nameTerm, nThreads, patr, paternType, idioma){
-  
-  print(nameCorpus)
-  print(nameTerm)
-  print(nThreads)
-  print(patr)
-  print(paternType)
-  print(idioma)
-  
+createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, paternType, idioma){
+  tic()
   #Creacion de los directorios
   print("Creando Directorios: ")
   tic()
@@ -35,10 +28,10 @@ createTerminology <- function(quancorpusDocs, nameCorpus, nameTerm, nThreads, pa
   hilos = nThreads
 
   #Creacion de corpus quanteda
-  print("Extracción de textos del corpus: ")
-  tic()
-  tDocs <- texts(quancorpusDocs) #No tarda nada. 
-  toc()
+  # print("Extracción de textos del corpus: ")
+  # tic()
+  # tDocs <- texts(quancorpusDocs) #No tarda nada. 
+  # toc()
   
   #Descarga de modelo selecionado para la extraccion de terminos
   print("Descargando modelo: ")
@@ -362,4 +355,5 @@ createTerminology <- function(quancorpusDocs, nameCorpus, nameTerm, nThreads, pa
   saveRDS(stats, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/",nameTerm,"/terminologyExtracted.rds"))
   
   print("¡Terminología creada con exito!")
+  toc()
 }

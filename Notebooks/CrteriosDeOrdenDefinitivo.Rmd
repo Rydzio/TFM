@@ -23,16 +23,16 @@ Leemos los documentos.
 library(readtext)
 library(tictoc)
 
-hilos = 8
+hilos = 16
 
 #font_import()
 
 #Ruta de trabajo
 setwd("~/TFM")
 
-#ruta = "/doc"
+ruta = "/doc"
 
-ruta = "/legal"
+#ruta = "/legal"
 
 #ruta = "/Users/pedrohv/TFM/TerminologíasInteractivas/data/covid19/raw/documents"
 
@@ -42,7 +42,7 @@ docs <- readtext(paste0(getwd(),ruta, "*"), #Leo todo lo que tenga ese path
                  #docvarsfrom = "filenames", 
                  #docvarnames = c("document", "language"),
                  #dvsep = "_", 
-                 encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
+                 #encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
                  verbosity = 3) 
 
 toc()

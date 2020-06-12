@@ -303,14 +303,15 @@ Patron con UPOS
 statsUPOS <- keywords_phrases(x = x$upos, 
                           term = tolower(x$token), 
                           #pattern = "(DET|NOUN|ADJ)|(PROPN|NOU|NADJ|AUX)",
-                          pattern = "(NOUN|PROPN|PRON)&((ADJ|NUM)|(NOUN|PROPN|PRON))*((ADP)(DET)*(NOUN|PROPN|PRON)((ADJ|NUM)|(NOUN|PROPN|PRON))*)* ", #SNP for UPOS
+                          pattern = "(NOUN|PROPN|PRON)((ADJ|NUM)|(NOUN|PROPN|PRON))*((ADP)(DET)*(NOUN|PROPN|PRON)((ADJ|NUM)|(NOUN|PROPN|PRON))*)* ", #SNP for UPOS
                           is_regex = TRUE, 
                           detailed = FALSE #logical indicating to return the exact positions where the phrase was found (set to TRUE) or just how many times each phrase is occurring (set to FALSE). Defaults to TRUE.
                          )
 
-#((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON)(ADP+DET*((ADJ|NUM)|(NOUN|PROPN|PRON))*(NOUN|PROPN|PRON))*
 statsUPOS
 ```
+
+
 
 
 Esta figura muestra porcentaje acumulado:

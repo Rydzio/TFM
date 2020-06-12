@@ -92,12 +92,13 @@ createCorpus <- function(ruta, nameCorpus, nThreads, encoding){
   tic()
   quanteda_options(threads = hilos)
   quancorpusDocs <- corpus(docs)
+  tDocs <- texts(quancorpusDocs)
   toc()
 
   #Limpiamos los textos del corpus de caracteres extraños que empeoren nuestra extracción de terminos.
   print("Limpiando el corpus: ")
   tic()
-  quancorpusDocsClean <- str_replace_all(quancorpusDocs, c("\001" = "",
+  quancorpusDocsClean <- str_replace_all(tDocs, c("\001" = "",
                                      "\002" = "",
                                      "\003" = "",
                                      "\004" = "",
@@ -106,7 +107,7 @@ createCorpus <- function(ruta, nameCorpus, nThreads, encoding){
                                      "\f" = "")
   )
   #Debemos volver a establecer los nombres de los documentos, al limpiar los textos se pierden.
-  attr(quancorpusDocsClean, 'names') <- attr(quancorpusDocs, 'names')
+  attr(quancorpusDocsClean, 'names') <- attr(tDocs, 'names')
   quancorpusDocs <- quancorpusDocsClean
   toc()
   

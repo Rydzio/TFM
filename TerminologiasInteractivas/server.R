@@ -240,7 +240,7 @@ function(input, output, session) {
     },
     content = function(file) {
       data <- readRDS(paste0(path, input$CorpusForDownload,"/processed/corpus/corpus.rds"))
-      data <- texts(data)
+      # data <- texts(data)
       write.csv(data, file)
     }
   )
@@ -849,23 +849,29 @@ function(input, output, session) {
   
   #Tablas comprarativas
   #Primera
+  solapamiento = 0
   observeEvent(input$termComp1, {
     
     if(!emptyCorpus){
       tableComp1 <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",input$termComp1,"/terminology.rds"))
+      
+      tableComp1 <- tableComp1 %>% select(1,6,7,8)
+      #tableComp1[,2] <- round(tableComp1[,2],6)
+      tableComp1[,3] <- round(tableComp1[,3],2)
+      tableComp1[,4] <- round(tableComp1[,4],2)
     }
     
     output$tdTermsComp1 = DT::renderDataTable(
-      tableComp1 %>% select(1,6,7,8)
+      tableComp1
     )
     
+    solapamiento <<- length(tableComp1$keyword %in% tableComp2$keyword)
   })
   
   # Reactive function to determine if a row is selected
   sel <- reactive({!is.null(input$tdTermsComp1_rows_selected)})  
   # Output result of reactive function sel
   output$dtComp1Rows <- renderText({
-    #paste("Any rows selected: ", sel())
     length(input$tdTermsComp1_rows_selected)
   })
 
@@ -874,20 +880,29 @@ function(input, output, session) {
     
     if(!emptyCorpus){
       tableComp2 <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",input$termComp2,"/terminology.rds"))
+      
+      tableComp2 <- tableComp2 %>% select(1,6,7,8)
+      #tableComp2[,2] <- round(tableComp2[,2],6)
+      tableComp2[,3] <- round(tableComp2[,3],2)
+      tableComp2[,4] <- round(tableComp2[,4],2)
     }
     
     output$tdTermsComp2 = DT::renderDataTable(
-      tableComp2 %>% select(1,6,7,8)
+      tableComp2
     )
     
+    solapamiento <<- length(tableComp2$keyword %in% tableComp1$keyword)
   })
   
   # Reactive function to determine if a row is selected
   sel <- reactive({!is.null(input$tdTermsComp2_rows_selected)})  
   # Output result of reactive function sel
   output$dtComp2Rows <- renderText({
-    #paste("Any rows selected: ", sel())
     length(input$tdTermsComp2_rows_selected)
+  })
+  
+  output$Solapamiento <- renderText({
+    solapamiento #<- length(tableComp2$keyword %in% tableComp1$keyword)
   })
   
   #Cerrar la aplicacion: Guardamos los cambios.
