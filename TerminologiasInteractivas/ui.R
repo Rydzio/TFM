@@ -335,7 +335,7 @@ fluidPage(
                                           p("Se han seleccionado:", span(textOutput("dtComp2Rows", inline = TRUE), style = "font-weight:bold"), "Terminos erroneos en la Terminología 2"),
                                    ),
                                    column(12, align = "center",
-                                          p("El gradod e solapamiento entre las dos terminologías es de:", span(textOutput("Solapamiento", inline = TRUE), style = "font-weight:bold"), "Terminos"),
+                                          p("El grado de solapamiento entre las dos terminologías es de:", span(textOutput("Solapamiento", inline = TRUE), style = "font-weight:bold"), "Terminos"),
                                    ),
                                  ),
                                ),

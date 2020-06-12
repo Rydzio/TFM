@@ -358,6 +358,8 @@ function(input, output, session) {
     #Actualizamos las listas de corpus
     termList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/",currentCorpus,"/processed/terminology"), recursive = FALSE))
     
+    
+    
     updateRadioGroupButtons(session, 
                             "termOpt", 
                             label = NULL, 
@@ -373,7 +375,6 @@ function(input, output, session) {
                             label = NULL, 
                             choices = termList
     )
-    
     updateSelectInput(session,
                       "TermForDownload",
                       choices = termList)
@@ -856,9 +857,9 @@ function(input, output, session) {
       tableComp1 <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",input$termComp1,"/terminology.rds"))
       
       tableComp1 <- tableComp1 %>% select(1,6,7,8)
-      #tableComp1[,2] <- round(tableComp1[,2],6)
-      tableComp1[,3] <- round(tableComp1[,3],2)
-      tableComp1[,4] <- round(tableComp1[,4],2)
+      tableComp1[,2] <- round(as.numeric(tableComp1[,2]),6)
+      tableComp1[,3] <- round(as.numeric(tableComp1[,3]),2)
+      tableComp1[,4] <- round(as.numeric(tableComp1[,4]),2)
     }
     
     output$tdTermsComp1 = DT::renderDataTable(
@@ -866,6 +867,10 @@ function(input, output, session) {
     )
     
     solapamiento <<- length(tableComp1$keyword %in% tableComp2$keyword)
+    
+    output$Solapamiento <- renderText({
+      solapamiento #<- length(tableComp2$keyword %in% tableComp1$keyword)
+    })
   })
   
   # Reactive function to determine if a row is selected
@@ -874,7 +879,7 @@ function(input, output, session) {
   output$dtComp1Rows <- renderText({
     length(input$tdTermsComp1_rows_selected)
   })
-
+  
   #Segunda
   observeEvent(input$termComp2, {
     
@@ -882,9 +887,9 @@ function(input, output, session) {
       tableComp2 <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",input$termComp2,"/terminology.rds"))
       
       tableComp2 <- tableComp2 %>% select(1,6,7,8)
-      #tableComp2[,2] <- round(tableComp2[,2],6)
-      tableComp2[,3] <- round(tableComp2[,3],2)
-      tableComp2[,4] <- round(tableComp2[,4],2)
+      tableComp2[,2] <- round(as.numeric(tableComp2[,2]),6)
+      tableComp2[,3] <- round(as.numeric(tableComp2[,3]),2)
+      tableComp2[,4] <- round(as.numeric(tableComp2[,4]),2)
     }
     
     output$tdTermsComp2 = DT::renderDataTable(
@@ -892,6 +897,10 @@ function(input, output, session) {
     )
     
     solapamiento <<- length(tableComp2$keyword %in% tableComp1$keyword)
+    
+    output$Solapamiento <- renderText({
+      solapamiento #<- length(tableComp2$keyword %in% tableComp1$keyword)
+    })
   })
   
   # Reactive function to determine if a row is selected
