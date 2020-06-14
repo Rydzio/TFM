@@ -89,6 +89,7 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
     stats <- select(stats, -c(doc_id, tf, idf))
     stats <- aggregate(list(Frecuencia=stats$freq, tf_idf=stats$tf_idf), by=list(keyword=stats$keyword, ngram=stats$ngram), FUN=sum)
     toc()
+    #keyword - ngram - freq - tf_idf
     #Calculamos la puntuación RAKE---------------------------------------------------
     print("Puntuación RAKE: ")
     tic()

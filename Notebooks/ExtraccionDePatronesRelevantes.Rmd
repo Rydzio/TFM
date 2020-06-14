@@ -7,54 +7,286 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
-Leemos los documentos.
-```{r echo=FALSE}
-library(readtext)
-library(tictoc)
-
-hilos = 16
-
-#font_import()
-
-#Ruta de trabajo
-setwd("~/TFM")
-
-ruta = "/doc"
-
-#ruta = "/legal"
-
-#ruta = "/Users/pedrohv/TFM/TerminologíasInteractivas/data/covid19/raw/documents"
-
-#Leer un corpus
-tic()
-docs <- readtext(paste0(getwd(),ruta, "*"), #Leo todo lo que tenga ese path
-                 #docvarsfrom = "filenames", 
-                 #docvarnames = c("document", "language"),
-                 #dvsep = "_", 
-                 #encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
-                 verbosity = 3) 
-
-toc()
-
-print("Se han leido los documentos del corpus con éxito")
-
-```
-
-
-
-
-
-
-
 ```{r}
 setwd("~/TFM")
 
-read.table(file = 'Notebooks/gold_standard_termcat.tsv', sep = '\t', header = TRUE) -> test
-test
+read.table(file = 'Notebooks/gold_standard_termcat.tsv', sep = '\t', header = FALSE) -> gst
+
+gst <- as.data.frame(gst)
+colnames(gst) <- "keyword"
+
+gst$keyword <- as.character(gst$keyword)
+
+class(gst$keyword)
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+Extraer las caracteriticas en x de cada uno de los terminos en test
+```{r}
+# create quanteda corpus
+library(quanteda)
+quanteda_options(threads = 10)
+gstcorpus <- corpus(gst$keyword)#Cada label es un documento
+summ <- summary(gstcorpus,    #Esto tarda unos segundos. Types es el num de tokens únicos.
+                n = length(gst$keyword))#Por defecto son 100
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```
+
+
+```{r, echo = FALSE}
+#Puedo sacar los textos 
+tCorp <- texts(gstcorpus) #No tarda nada. 
+                       #Un vector nombrado (cada elemento tiene el nombre del doc). 
+                       #Cada elemento es una cadena con el texto del doc.
+
+#Reemplazo en t todas las apariciones de los \00X por ""
+library(stringr)
+#tmp= c("\001\004AB\006", "AB\005CD\001")
+
+goldStandard  <- str_replace_all(tCorp, 
+                          c("\001" = "",
+                            "\002" = "",
+                            "\003" = "",
+                            "\004" = "",
+                            "\005" = "",
+                            "\006" = ""
+                           )
+                       )
+
+library(udpipe)
+model <- udpipe_download_model(language = "spanish")
+hilos = 8
+path <- model$file_model
+tic()
+goldStandard <- udpipe(goldStandard, path, parallel.cores = hilos)
+toc()
+```
+
+
+```{r echo=FALSE, fig.align='center', fig.height=3, fig.width=5}
+#Plotting Part-of-speech tags from the given text
+library(lattice)
+stats <- txt_freq(goldStandard$upos) #upos = universal part of speech
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = stats, col = "yellow", 
+         main = "UPOS (Universal Parts of Speech)\n frequency of occurrence", 
+         xlab = "Freq")
+```
+
+
+
+```{r, echo = FALSE}
+goldStandard$phrase_tag <- as_phrasemachine(goldStandard$upos, 
+                                 type = "upos" #Puede ser también "penn-treebank"
+                                )#Convierte los tags de upos a phrasemachine (Handler 2016). 
+
+df_doc_token     <- aggregate(token ~ doc_id, data = goldStandard, paste, collapse = " ")
+df_doc_upos <- aggregate(upos ~ doc_id, data = goldStandard, paste, collapse = "")
+df_doc_token_phrasetag <- df_doc_token
+df_doc_token_phrasetag$upos <- df_doc_upos$upos
+tab <- table(df_doc_token_phrasetag$upos)
+#Ordeno la tabla de contingencia
+tab_ord <- sort(tab, decreasing = T)
+#Lo que más hay es NA (216), luego N (141)....
+library(knitr)
+kable (tab_ord, caption = "Número de casos de cada POS pattern") #Muestro todos
+```
+
+
+```{r echo=FALSE, fig.width=8, fig.height=5, fig.align='center'}
+barplot(tab_ord,  
+        log="y", #Log scale in y axis
+        main="POS patterns",
+        ylab="Number of instances (log scale)",
+        xlab="POS pattern",
+        las=2 #Rotated lables in the x axis
+      )
+```
+
+```{r echo=FALSE, fig.width=8, fig.height=5, fig.align='center'}
+barplot(cumsum(tab_ord)/nrow(df_doc_token_phrasetag),  
+        #log="y", #Log scale in y axis
+        main="POS patterns (Cumulative Sum)",
+        ylab="Percentage covered",
+        xlab="POS patterns",
+        las=2 #Rotated lables in the x axis
+      )
+```
+
+
+```{r echo=FALSE, fig.width=8, fig.height=5, fig.align='center'}
+library(ggplot2)
+tabsum <- cumsum(tab_ord)/nrow(df_doc_token_phrasetag)
+cumdf <- data.frame(cum = tabsum, 
+                    stringsAsFactors = FALSE) #Tiene una única col
+cumdf$pat <- rownames(cumdf) #Nueva col con pattens
+top <- 33
+defcolor <- "#EEEEEE"  #light gray para imprimir (casi no se ve en pantalla). Si uso #BBBBBB sale muy oscuro impreso
+             #Un tono más oscuro es #CCCCCC . Si uso #777777 sale oscurito en pantalla pero muy oscuro impreso 
+micolor <- c(rep("#CCCCCC", top), rep(defcolor, nrow(cumdf) - top)) #Vector de colores
+
+sumtop <- cumdf$cum[top] #Suma de los 12 primeros
+ggplot(data=cumdf, 
+       aes(x=pat, y=cum, fill = pat)) +
+  scale_x_discrete(limits = cumdf$pat) + #Sin esto ordena alfabéticamente
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),  #Que ponga porcentaje (en lugar de float) en eje y
+                     breaks = seq(0,1,0.1), #Que pinte estos (de 0 a 1 (100%) de 0.1 (10%) en 10%)
+                     expand = expand_scale(mult = c(0, 0)) #Elimina espacios extra por debajo y por arriba, para que vaya justo de 0 a 1 (100%). 
+                    ) +
+  labs( #title = "The title",
+        #subtitle = "the subtitle",        #will be displayed below the title.
+        #caption = "Some ref of copyright" #The text for the caption which will be displayed in the bottom-right of the plot by default.
+        #tag = "some letter useful "
+        x = "POS patterns ordered (most used in the left)", #Label of the x axis
+        y = "Percentage of entities covered (cummulative)" #Label of the x axis
+      ) +
+  geom_bar(stat="identity", 
+           show.legend = FALSE, #Avoids leyend (big, one class per color) 
+           #color = "#111111", #Color del borde. Si no lo pongo no poner borde
+           #fill = defcolor   #Color del relleno
+           ) +
+  scale_fill_manual (values = micolor, #coloreo distinto EL INTERIOR de las top barras 
+                     limits = cumdf$pat #Es imprescindible si estoy forzando el orden
+                    ) +
+  geom_segment(aes(x=cumdf$pat[1],  y=sumtop  , xend=cumdf$pat[top], yend=sumtop),   #Add a horizontal segment (line)
+               size = 0.5, #Grosor de la línea. Por def = 1
+               color="red") +
+  geom_segment(aes(x=cumdf$pat[top], y=0.0,      xend=cumdf$pat[top], yend=sumtop),   #Add a vertical segment (line)
+               size = 0.5, #Grosor de la línea. Por def = 1
+               color="red") +
+  annotate(geom="text", 
+           x=cumdf$pat[1], 
+           y=sumtop + 0.05, #A litte above the line
+           hjust = 0, #La posición será la del inicio de la cadena 
+           label=paste0("The ", top, " most used patterns cover ", 
+                       round(100* max(cumsum(tab_ord[1:top])/nrow(df_doc_token_phrasetag)), #Top x cumsum
+                             digits=0 #Sin decimales
+                            ),
+                       "% of the terms"
+                       ),
+           color="red") +
+  theme_classic() + #Light es un theme algo más mono que bw o classic pero que impreso no queda bien
+  theme(#element_text(size=20),                            #El tamaño del font general
+        axis.text.x = element_text(angle = 90,#Para girar las labels del eje x
+                                   #size = rel(0.95), # puedo poner un vaor absoluto (e.g. 10) o relativo
+                                   vjust = 0.5, #0 means left-justified, 1 means right-justified.
+                                   hjust = 1    #0 means left-justified, 1 means right-justified.
+                                  ) 
+       ) 
+```
+
+
+```{r echo=FALSE, fig.width=8, fig.height=5, fig.align='center'}
+library(ggplot2)
+tabsum <- cumsum(tab_ord)/nrow(df_doc_token_phrasetag)
+cumdf <- data.frame(cum = tabsum, 
+                    stringsAsFactors = FALSE) #Tiene una única col
+cumdf$pat <- rownames(cumdf) #Nueva col con pattens
+top <- 12
+defcolor <- "#EEEEEE"  #light gray para imprimir (casi no se ve en pantalla). Si uso #BBBBBB sale muy oscuro impreso
+             #Un tono más oscuro es #CCCCCC . Si uso #777777 sale oscurito en pantalla pero muy oscuro impreso 
+micolor <- c(rep("#CCCCCC", top), rep(defcolor, nrow(cumdf) - top)) #Vector de colores
+
+sumtop <- cumdf$cum[top] #Suma de los 12 primeros
+ggplot(data=cumdf, 
+       aes(x=pat, y=cum, fill = pat)) +
+  scale_x_discrete(limits = cumdf$pat) + #Sin esto ordena alfabéticamente
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),  #Que ponga porcentaje (en lugar de float) en eje y
+                     breaks = seq(0,1,0.1), #Que pinte estos (de 0 a 1 (100%) de 0.1 (10%) en 10%)
+                     expand = expand_scale(mult = c(0, 0)) #Elimina espacios extra por debajo y por arriba, para que vaya justo de 0 a 1 (100%). 
+                    ) +
+  labs( #title = "The title",
+        #subtitle = "the subtitle",        #will be displayed below the title.
+        #caption = "Some ref of copyright" #The text for the caption which will be displayed in the bottom-right of the plot by default.
+        #tag = "some letter useful "
+        x = "POS patterns ordered (most used in the left)", #Label of the x axis
+        y = "Percentage of entities covered (cummulative)" #Label of the x axis
+      ) +
+  geom_bar(stat="identity", 
+           show.legend = FALSE, #Avoids leyend (big, one class per color) 
+           #color = "#111111", #Color del borde. Si no lo pongo no poner borde
+           #fill = defcolor   #Color del relleno
+           ) +
+  scale_fill_manual (values = micolor, #coloreo distinto EL INTERIOR de las top barras 
+                     limits = cumdf$pat #Es imprescindible si estoy forzando el orden
+                    ) +
+  geom_segment(aes(x=cumdf$pat[1],  y=sumtop  , xend=cumdf$pat[top], yend=sumtop),   #Add a horizontal segment (line)
+               size = 0.5, #Grosor de la línea. Por def = 1
+               color="red") +
+  geom_segment(aes(x=cumdf$pat[top], y=0.0,      xend=cumdf$pat[top], yend=sumtop),   #Add a vertical segment (line)
+               size = 0.5, #Grosor de la línea. Por def = 1
+               color="red") +
+  annotate(geom="text", 
+           x=cumdf$pat[1], 
+           y=sumtop + 0.05, #A litte above the line
+           hjust = 0, #La posición será la del inicio de la cadena 
+           label=paste0("The ", top, " most used patterns cover ", 
+                       round(100* max(cumsum(tab_ord[1:top])/nrow(df_doc_token_phrasetag)), #Top x cumsum
+                             digits=0 #Sin decimales
+                            ),
+                       "% of the terms"
+                       ),
+           color="red") +
+  theme_classic() + #Light es un theme algo más mono que bw o classic pero que impreso no queda bien
+  theme(#element_text(size=20),                            #El tamaño del font general
+        axis.text.x = element_text(angle = 90,#Para girar las labels del eje x
+                                   #size = rel(0.95), # puedo poner un vaor absoluto (e.g. 10) o relativo
+                                   vjust = 0.5, #0 means left-justified, 1 means right-justified.
+                                   hjust = 1    #0 means left-justified, 1 means right-justified.
+                                  ) 
+       ) 
+```
+
+ESTOS 12 PRIMEROS PATRONES SUMAN EL 78%
+
+NOUNADJ	188
+NOUN	106
+NOUNADPNOUN	72
+VERB	66
+VERBADPNOUN	34
+NOUNADPNOUNADJ	23
+ADJ	14
+NOUNADPDETNOUN	14
+VERBADJ	14
+NOUNADPNOUNADPNOUN	12
+NOUNADJADJ	10
+ADJNOUN
+
+
+ESTOS 20 PATRONES SUPONEN EL 85%
+
+NOUNADJ	188
+NOUN	106
+NOUNADPNOUN	72
+VERB	66
+VERBADPNOUN	34
+NOUNADPNOUNADJ	23
+ADJ	14
+NOUNADPDETNOUN	14
+VERBADJ	14
+NOUNADPNOUNADPNOUN	12
+NOUNADJADJ	10
+ADJNOUN	9
+PUNCTNOUNADJ	9
+VERBADPDETNOUN	7
+NOUNVERB	6
+VERBADPNOUNADJ	6
+VERBNOUN	6
+NOUNADJADPNOUN	5
+NOUNNOUN	5
+VERBPUNCTADPDETNOUNADJPUNCT	5
+
+Con 30 alcanzamos el 90%
+
+```{r}
+term <- data.frame(tab_ord)
+colnames(term)[1] <- "keyword"
+```
+
+
+```{r}
+"keyword" %in% colnames(term)
+```
+
+

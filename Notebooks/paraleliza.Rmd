@@ -1,0 +1,257 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Leer
+```{r echo=FALSE}
+library(readtext)
+library(tictoc)
+library(doParallel)
+
+hilos = detectCores()
+
+#Ruta de trabajo
+setwd("~/TFM")
+
+ruta = "/doc"
+#ruta = "/legal"
+#ruta = "/InnoSpace/data/corpus_data/Airbus/raw/documents"
+
+#Leer un corpus
+tic()
+docs <- readtext(paste0(getwd(),ruta, "*"), #Leo todo lo que tenga ese path
+                 #docvarsfrom = "filenames", 
+                 #docvarnames = c("document", "language"),
+                 #dvsep = "_", 
+                 #encoding = "UTF-8-BOM", #"ISO-8859-1", #Casi mejor no pongo nada porque no sÃ© el encoding
+                 verbosity = 3) 
+
+toc()
+print("Se han leido los documentos del corpus con éxito")
+
+```
+
+corpus
+```{r}
+library(quanteda)
+library(stringr)
+
+tic()
+# create quanteda corpus
+quanteda_options(threads = hilos)
+quancorpusDocs <- corpus(docs)
+
+#Obtenemos un resumen del corpus que hemops creado
+summ <- summary(quancorpusDocs,    #Esto tarda unos segundos. Types es el num de tokens Únicos.
+                n = nrow(docs))    #Por defecto son 100
+sum(summ$Sentences)
+sum(summ$Tokens)
+
+#Puedo sacar los textos 
+tDocs <- texts(quancorpusDocs) #No tarda nada. 
+                       #Un vector nombrado (cada elemento tiene el nombre del doc). 
+                       #Cada elemento es una cadena con el texto del doc.
+
+#Con este proceso limpiamos bien los documentos de caracteres extraños producidos por un error de lectura.
+tDocs2 <- str_replace_all(tDocs, c("\001" = "",
+                          "\002" = "",
+                          "\003" = "",
+                          "\004" = "",
+                          "\005" = "",
+                          "\006" = "",
+                          "\f" = ""
+                          )
+                     )
+
+#Debemos volver a establecer los nombres de los documentos, al limpiar los textos se pierden.
+attr(tDocs2, 'names') <- attr(tDocs, 'names')
+
+toc()
+```
+
+Descargamos el modelo udpipe de Google y extraemos los terminos.
+```{r}
+library(udpipe)
+
+
+model <- udpipe_download_model(language = "spanish")
+
+path <- model$file_model
+
+#path <- "/Notebooks/spanish-gsd-ud-2.4-190531.udpipe"
+
+tic()
+x <- udpipe(tDocs2, path, parallel.cores = hilos)
+toc()
+```
+
+Extracción de keywords a traves de POS pattern pero realizada en cada uno de los documentos del corpus de manera individual
+```{r}
+library(dplyr)
+
+x$phrase_tag <- as_phrasemachine(x$upos, 
+                                 type = "upos" #Puede ser tambiÃ©n "penn-treebank"
+                                )#Convierte los tags de upos a phrasemachine (Handler 2016). 
+tic()
+statsPOS2 <- data.frame()
+statsPOSSplit <- data.frame()
+split(x, x$doc_id) -> xSplit
+
+for (doc_id in xSplit) {
+  statstTemp <- keywords_phrases(x = doc_id$phrase_tag, 
+                          term = tolower(doc_id$token), 
+                          pattern = "N(A|N)*(PD*N(A|N)*)*",
+                          is_regex = TRUE, 
+                          detailed = FALSE 
+                        
+  )
+
+  cbind(rep(doc_id$doc_id[1], nrow(statstTemp)), statstTemp) ->> statsPOS2
+  
+  colnames(statsPOS2)[1] <- "doc_id"
+  
+  rbind(statsPOS2, statsPOSSplit) ->> statsPOSSplit
+}
+toc()
+statsPOSSplit
+statsPOSSplitcopia <- statsPOSSplit
+```
+
+TF_IDF
+```{r}
+library(tidytext)
+
+statsPOSSplit <- statsPOSSplit %>%
+  bind_tf_idf(keyword, doc_id, freq)
+
+statsPOSSplit[order(statsPOSSplit$keyword),]
+```
+
+TF_IDF para el corpus completo
+```{r}
+statsPOSTF_IDF <- select(statsPOSSplit, -c(doc_id, tf, idf))
+statsPOSTF_IDF <- aggregate(statsPOSTF_IDF$tf_idf, by=list(keyword=statsPOSTF_IDF$keyword), FUN=sum)
+colnames(statsPOSTF_IDF)[2] <- "tf_idf"
+statsPOSTF_IDF
+```
+
+RAKE Score para las palabras divididas en funhción del documento al que pertenecen
+```{r}
+probando <- strsplit(statsPOSSplit$keyword, split = " ")
+data.frame(splited = unlist(probando)) -> probando
+
+table(probando) -> tabla
+tabla <- data.frame(tabla)
+```
+
+Puntuación RAKE dividida por documentos
+```{r}
+tic()
+score = c()
+pb = txtProgressBar(min = 0, max = nrow(statsPOSSplit), initial = 0)
+
+for (keyIndex in 1:nrow(statsPOSSplit)) {
+  
+  if(statsPOSSplit[keyIndex, "ngram"] == 1){
+    score <- append(score, 0)
+  } else {
+
+    keySplt <- strsplit(statsPOSSplit[keyIndex, "keyword"], " ")
+    keyDegree <<- statsPOSSplit[keyIndex, "ngram"] - 1
+  
+    tempScore <- c()
+    for(word in keySplt){
+      
+      tempScore <- append(tempScore, keyDegree / tabla[tabla$probando %in% word, ]$Freq)
+      
+    }
+    score <- append(score, sum(tempScore))
+  }
+  setTxtProgressBar(pb,keyIndex)
+}
+toc()
+```
+
+Unimos el resultado de la puntuación RAKE y presentamos la tabla
+```{r}
+
+cbind(statsPOSSplit, score) -> statsPOSRAKEScore
+colnames(statsPOSRAKEScore)[4] <- "RAKE"
+statsPOSRAKEScore <- statsPOSRAKEScore[order(-statsPOSRAKEScore$RAKE),]
+statsPOSRAKEScore
+```
+
+DIVIDIDA
+RAKE Score para las palabras divididas en funhción del documento al que pertenecen
+```{r}
+probando <- strsplit(statsPOSSplit$keyword, split = " ")
+data.frame(splited = unlist(probando)) -> probando
+
+table(probando) -> tabla
+tabla <- data.frame(tabla)
+```
+
+Puntuación RAKE dividida por documentos
+```{r}
+
+library(foreach)
+library(doParallel)
+tic()
+score = c()
+pb = txtProgressBar(min = 0, max = nrow(statsPOSSplit), initial = 0)
+
+cores=detectCores()
+# Example registering clusters
+cl <- parallel::makeCluster(cores[1]-1)
+doParallel::registerDoParallel(cl)
+
+res <- foreach(keyIndex = 1:nrow(statsPOSSplit), .combine = list) %dopar%  {
+  
+  if(statsPOSSplit[keyIndex, "ngram"] == 1){
+    score <<- append(score, 0)
+  } else {
+
+    keySplt <- strsplit(statsPOSSplit[keyIndex, "keyword"], " ")
+    keyDegree <<- statsPOSSplit[keyIndex, "ngram"] - 1
+  
+    tempScore <- c()
+    for(word in keySplt){
+      
+      tempScore <- append(tempScore, keyDegree / tabla[tabla$probando %in% word, ]$Freq)
+      
+    }
+    score <<- append(score, sum(tempScore))
+    sum(tempScore)
+  }
+  setTxtProgressBar(pb,keyIndex)
+}
+
+parallel::stopCluster(cl)
+toc()
+score
+```
+
+```{r}
+cbind(statsPOSRAKEScore, res) -> statsPOSRAKEScore
+colnames(statsPOSRAKEScore)[4] <- "RAKE"
+statsPOSRAKEScore <- statsPOSRAKEScore[order(-statsPOSRAKEScore$RAKE),]
+statsPOSRAKEScore
+```
+
+
+```{r}
+library(foreach)
+library(doParallel)
+
+
+cores=detectCores()
+# Example registering clusters
+cl <- parallel::makeCluster(cores[1]-1)
+doParallel::registerDoParallel(cl)
+foreach(i = 1:10, .combine = 'c') %dopar% {
+  sqrt(i)
+}
+parallel::stopCluster(cl)
+```
+

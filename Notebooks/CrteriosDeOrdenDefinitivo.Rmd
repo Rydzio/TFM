@@ -22,19 +22,22 @@ Leemos los documentos.
 ```{r echo=FALSE}
 library(readtext)
 library(tictoc)
+library(doParallel)
 
-hilos = 16
+hilos = detectCores()
 
 #font_import()
 
 #Ruta de trabajo
-setwd("~/TFM")
+setwd("~/")
 
-ruta = "/doc"
+#ruta = "/doc"
 
 #ruta = "/legal"
 
 #ruta = "/Users/pedrohv/TFM/TerminologíasInteractivas/data/covid19/raw/documents"
+
+ruta = "/InnoSpace/data/corpus_data/Airbus/raw/documents"
 
 #Leer un corpus
 tic()
@@ -89,7 +92,6 @@ attr(tDocs2, 'names') <- attr(tDocs, 'names')
 
 toc()
 ```
-
 
 Descargamos el modelo udpipe de Google y extraemos los terminos.
 ```{r}
@@ -152,7 +154,7 @@ for (doc_id in xSplit) {
 }
 toc()
 statsPOSSplit
-
+statsPOSSplitcopia <- statsPOSSplit
 ```
 
 
@@ -454,6 +456,211 @@ statsPOSCVALUE %>%
 ```
 
 
+```{r}
+#statsPOSSplit <- statsPOSSplitcopia
+#colnames(statsPOSSplit)[4] <- "Frecuencia"
+
+statsPOSSplit <- statsPOS
+colnames(statsPOSSplit)[3] <- "Frecuencia"
+
+statsPOSSplit <- select(statsPOSSplit, -c(ngram))
+      
+
+if("keyword" %in% colnames(statsPOSSplit)){
+  
+  if(!("ngram" %in% colnames(statsPOSSplit))){
+    ngram <- c()
+    for(word in statsPOSSplit$keyword){
+      append(ngram, length(strsplit(word, " ")[[1]])) -> ngram
+    }
+    cbind(statsPOSSplit, ngram) -> statsPOSSplit
+  }
+  
+  print("La terminología tiene keywords")
+  if("Frecuencia" %in% colnames(statsPOSSplit)){
+    print("Se pueden obtener las puntuaciones de cada keyword")
+    if("doc_id" %in% colnames(statsPOSSplit)){
+      print("Se puede obtener la puntuación tf_idf, RAKE y c-value")
+      #Calcular puntuación tf_idf--------------------------------------------------------------------------------------------------------------------------------------------------
+      print("Puntuación tf_idf: ")
+      statsPOSSplit <- statsPOSSplit %>%
+        bind_tf_idf(keyword, doc_id, Frecuencia)
+      #doc_id - keyword - ngram - freq - tf - idf - tf_idf
+    
+      #Agrupamos la terminologia en funcion del documento, generando una terminología completa del corpus entero.
+      statsPOSSplit <- select(statsPOSSplit, -c(doc_id, tf, idf))
+      statsPOSSplit <- aggregate(list(Frecuencia=statsPOSSplit$Frecuencia, tf_idf=statsPOSSplit$tf_idf), by=list(keyword=statsPOSSplit$keyword, ngram=statsPOSSplit$ngram), FUN=sum)
+      #Calcular puntuación RAKE-----------------------------------------------------------------------------------------------------------------------------------------------------
+      print("Puntuación RAKE: ")
+      terminosPorSeparado <- strsplit(statsPOSSplit$keyword, split = " ")
+      data.frame(splited = unlist(terminosPorSeparado)) -> terminosPorSeparado
+      table(terminosPorSeparado) -> tablaPOS
+      tablaPOS <- data.frame(tablaPOS)
+      
+      score = c()
+      pb = txtProgressBar(min = 0, max = nrow(statsPOSSplit), initial = 0)#Prescindible
+      for (keyIndex in 1:nrow(statsPOSSplit)) {
+        
+        if(statsPOSSplit[keyIndex, "ngram"] == 1){
+          score <- append(score, 0)
+        } else {
+          
+          keySplt <- strsplit(statsPOSSplit[keyIndex, "keyword"], " ")
+          keyDegree <<- statsPOSSplit[keyIndex, "ngram"] - 1
+          
+          tempScore <- c()
+          for(word in keySplt){
+            
+            tempScore <- append(tempScore, keyDegree / tablaPOS[tablaPOS$terminosPorSeparado %in% word, ]$Freq)
+            
+          }
+          score <- append(score, sum(tempScore))
+        }
+        setTxtProgressBar(pb,keyIndex)#Prescindible
+      }
+      
+      cbind(statsPOSSplit, score) -> statsPOSSplit
+      colnames(statsPOSSplit)[5] <- "RAKE"
+      
+      #Calcular puntuación c-value--------------------------------------------------------------------------------------------------------------------------------------------------
+      print("Puntuación c-value")
+      pb = txtProgressBar(min = 0, max = nrow(statsPOSSplit), initial = 0) #Prescindible
+    
+      cValue <- c()
+      for (keyIndex in 1:nrow(statsPOSSplit)) {
+        #Extraemos el termino candidato
+        candidate <- statsPOSSplit[keyIndex, "keyword"]
+        #Extraemos la frecuencia del candidato en el corpùs
+        freqCandidate <- statsPOSSplit[keyIndex, "Frecuencia"]
+        
+        #Buscamos terminos que contengan a nuestro candidato. 
+        coincidencias <- statsPOSSplit[grepl(candidate ,statsPOSSplit$keyword, fixed = TRUE), ]
+        
+        #Numero de coincidencias
+        ncoincidencias <- nrow(coincidencias)
+        if(ncoincidencias == 1){
+          #El candidato no esta contenido en otro termino
+          #Calculamos c-value
+          res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate
+          #Almacenamos el resultado
+          append(cValue, res) -> cValue 
+        } else {
+          sumatorio <- sum(coincidencias$Frecuencia)
+          res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate - (1 / ncoincidencias) * sumatorio
+          #Almacenamos el resultado
+          append(cValue, res) -> cValue 
+        }
+        setTxtProgressBar(pb,keyIndex)#Prescindible
+      }
+      
+      cbind(statsPOSSplit, cValue) -> statsPOSSplit
+      colnames(statsPOSSplit)[6] <- "cvalue"
+      #construir terminología final, con autor y fecha
+      terminology <- data.frame(Terminos = subset(statsPOSSplit, select=c("keyword")),
+                              ngram = subset(statsPOSSplit, select=c("ngram")),
+                              Autor = c(rep("Orignial", nrow(statsPOSSplit))),
+                              Fecha = c(rep(Sys.Date(), nrow(statsPOSSplit))),
+                              Frecuencia = subset(statsPOSSplit, select=c("Frecuencia")),
+                              tf_idf = subset(statsPOSSplit, select=c("tf_idf")),
+                              RAKE = subset(statsPOSSplit, select=c("RAKE")),
+                              cValue = subset(statsPOSSplit, select=c("cvalue"))
+      )
+    } else {
+      print("Si no se tiene la información del documento del que se ha obtenido cada keyword, en una columna que se llame doc_id, no se podra obtener la puntuación tf_idf, solo se obtendrá RAKE y c-value")
+      #Calcular puntuación RAKE-----------------------------------------------------------------------------------------------------------------------------------------------------
+      print("Puntuación RAKE: ")
+      terminosPorSeparado <- strsplit(statsPOSSplit$keyword, split = " ")
+      data.frame(splited = unlist(terminosPorSeparado)) -> terminosPorSeparado
+      table(terminosPorSeparado) -> tablaPOS
+      tablaPOS <- data.frame(tablaPOS)
+      
+      score = c()
+      pb = txtProgressBar(min = 0, max = nrow(statsPOSSplit), initial = 0)#Prescindible
+      for (keyIndex in 1:nrow(statsPOSSplit)) {
+        
+        if(statsPOSSplit[keyIndex, "ngram"] == 1){
+          score <- append(score, 0)
+        } else {
+          
+          keySplt <- strsplit(statsPOSSplit[keyIndex, "keyword"], " ")
+          keyDegree <<- statsPOSSplit[keyIndex, "ngram"] - 1
+          
+          tempScore <- c()
+          for(word in keySplt){
+            
+            tempScore <- append(tempScore, keyDegree / tablaPOS[tablaPOS$terminosPorSeparado %in% word, ]$Freq)
+            
+          }
+          score <- append(score, sum(tempScore))
+        }
+        setTxtProgressBar(pb,keyIndex)#Prescindible
+      }
+      
+      cbind(statsPOSSplit, score) -> statsPOSSplit
+      colnames(statsPOSSplit)[4] <- "RAKE"
+      
+      #Calcular puntuación c-value--------------------------------------------------------------------------------------------------------------------------------------------------
+      print("Puntuación c-value")
+      pb = txtProgressBar(min = 0, max = nrow(statsPOSSplit), initial = 0) #Prescindible
+    
+      cValue <- c()
+      for (keyIndex in 1:nrow(statsPOSSplit)) {
+        #Extraemos el termino candidato
+        candidate <- statsPOSSplit[keyIndex, "keyword"]
+        #Extraemos la frecuencia del candidato en el corpùs
+        freqCandidate <- statsPOSSplit[keyIndex, "Frecuencia"]
+        
+        #Buscamos terminos que contengan a nuestro candidato. 
+        coincidencias <- statsPOSSplit[grepl(candidate ,statsPOSSplit$keyword, fixed = TRUE), ]
+        
+        #Numero de coincidencias
+        ncoincidencias <- nrow(coincidencias)
+        if(ncoincidencias == 1){
+          #El candidato no esta contenido en otro termino
+          #Calculamos c-value
+          res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate
+          #Almacenamos el resultado
+          append(cValue, res) -> cValue 
+        } else {
+          sumatorio <- sum(coincidencias$Frecuencia)
+          res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate - (1 / ncoincidencias) * sumatorio
+          #Almacenamos el resultado
+          append(cValue, res) -> cValue 
+        }
+        setTxtProgressBar(pb,keyIndex)#Prescindible
+      }
+      
+      cbind(statsPOSSplit, cValue) -> statsPOSSplit
+      colnames(statsPOSSplit)[5] <- "cvalue"
+      #construir terminología final, con autor y fecha
+      terminology <- data.frame(Terminos = subset(statsPOSSplit, select=c("keyword")),
+                              ngram = subset(statsPOSSplit, select=c("ngram")),
+                              Autor = c(rep("Orignial", nrow(statsPOSSplit))),
+                              Fecha = c(rep(Sys.Date(), nrow(statsPOSSplit))),
+                              Frecuencia = subset(statsPOSSplit, select=c("Frecuencia")),
+                              tf_idf = c(rep("NA", nrow(statsPOSSplit))),
+                              RAKE = subset(statsPOSSplit, select=c("RAKE")),
+                              cValue = subset(statsPOSSplit, select=c("cvalue"))
+      )
+    }
+  } else {
+    print("no se puede obtener ninguna puntuación de la temrinología que se ha introducido")
+    #Rellenar las columnas de puntuación con NA, y autor y fecha
+    #construir terminología final, con autor y fecha
+    terminology <- data.frame(Terminos = subset(statsPOSSplit, select=c("keyword")),
+                            ngram = subset(statsPOSSplit, select=c("ngram")),
+                            Autor = c(rep("Orignial", nrow(statsPOSSplit))),
+                            Fecha = c(rep(Sys.Date(), nrow(statsPOSSplit))),
+                            Frecuencia = subset(statsPOSSplit, select=c("Frecuencia")),
+                            tf_idf = c(rep("NA", nrow(statsPOSSplit))),
+                            RAKE = c(rep("NA", nrow(statsPOSSplit))),
+                            cValue = c(rep("NA", nrow(statsPOSSplit)))
+    )
+  }
+} else {
+  print("La terminología tiene que tener al menos una columna nombrada keywords")
+}
+```
 
 
 

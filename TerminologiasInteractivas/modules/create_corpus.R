@@ -95,6 +95,12 @@ createCorpus <- function(ruta, nameCorpus, nThreads, encoding){
   tDocs <- texts(quancorpusDocs)
   toc()
 
+  print("Contando tokens: ")
+  tic()
+  ntokens <- ntoken(quancorpusDocs)
+  print(ntokens)
+  toc()
+  
   #Limpiamos los textos del corpus de caracteres extraños que empeoren nuestra extracción de terminos.
   print("Limpiando el corpus: ")
   tic()
@@ -114,7 +120,7 @@ createCorpus <- function(ruta, nameCorpus, nThreads, encoding){
   #Guardado de datos
   saveRDS(metadata, paste0(getwd(),"/data/corpus_data/" ,nameCorpus,"/processed/corpus/metadata.rds"))
   saveRDS(quancorpusDocs, paste0(getwd(),"/data/corpus_data/" ,nameCorpus,"/processed/corpus/corpus.rds"))
-  #saveRDS(tokens, paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed/corpus/tokens.rds"))
+  saveRDS(ntokens, paste0(getwd(),"/data/corpus_data/", nameCorpus, "/processed/corpus/ntokens.rds"))
   
   
   print("¡corpus creado con exito!")

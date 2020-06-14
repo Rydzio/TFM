@@ -289,7 +289,6 @@ function(input, output, session) {
     
     df$text <- as.character(df$text)
     
-    print("parar")
     
     dftmp <- corpus(df)
     df <- str_replace_all(dftmp, c("\001" = "",
@@ -300,15 +299,16 @@ function(input, output, session) {
                                    "\006" = "",
                                    "\f" = "")
     )
+    
+    nt <- ntoken(dftmp)
+    
     #Debemos volver a establecer los nombres de los documentos, al limpiar los textos se pierden.
     attr(df, 'names') <- attr(dftmp, 'names')
-    
-    #tokens <- tokens(df)
 
     #Guardado de datos
     saveRDS(MTDT, paste0(getwd(),"/data/corpus_data/" ,input$dirCorp$name,"/processed/corpus/metadata.rds"))
     saveRDS(df, paste0(getwd(),"/data/corpus_data/" ,input$dirCorp$name,"/processed/corpus/corpus.rds"))
-    #saveRDS(tokens, paste0(getwd(),"/data/corpus_data/" ,input$dirCorp$name,"/processed/corpus/tokens.rds"))
+    saveRDS(nt, paste0(getwd(),"/data/corpus_data/" ,input$dirCorp$name,"/processed/corpus/ntokens.rds"))
     
     #Actualizamos las listas de corpus
     corpusList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/"), recursive = FALSE))
@@ -342,23 +342,14 @@ function(input, output, session) {
     #Creacion de los directorios
     dir.create(paste0(getwd(),"/data/corpus_data/", currentCorpus, "/processed", "/terminology/", input$dirTerm$name))
     
-    df <- df %>% select(keyword, Autor, Fecha, Frecuencia)
-    df$keyword <- as.character(df$keyword)
+    #df <- df %>% select(keyword, Autor, Fecha, Frecuencia)
+    #df$keyword <- as.character(df$keyword)
     
-    
-    
-    
-    
-    #Guardado de datos
-    saveRDS(df, paste0(getwd(), "/data/corpus_data/", currentCorpus, "/processed/terminology/",input$dirTerm$name,"/terminology.rds"))
-    saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", currentCorpus, "/processed/terminology/",input$dirTerm$name,"/terminologyFull.rds"))
-    saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", currentCorpus, "/processed/terminology/",input$dirTerm$name,"/terminologyChanges.rds"))
-    saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", currentCorpus, "/processed/terminology/",input$dirTerm$name,"/terminologyExtracted.rds"))
+    upload_terminology(df, currentCorpus, input$dirTerm$name)
+    print("subido")
     
     #Actualizamos las listas de corpus
     termList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/",currentCorpus,"/processed/terminology"), recursive = FALSE))
-    
-    
     
     updateRadioGroupButtons(session, 
                             "termOpt", 
@@ -429,7 +420,7 @@ function(input, output, session) {
     
     #Contextualizar Terminologías
     output$dtTermsRaw = DT::renderDataTable(
-      tableTerms %>% select(1,4),selection = 'single'
+      tableTerms %>% select(1,4),selection = 'single', rownames = FALSE
     )
     
     observeEvent(input$dtTermsRaw_rows_selected, {
@@ -439,7 +430,8 @@ function(input, output, session) {
         df$context <- paste(df[,2],toupper(df[,3]),df[,4])
         df <- df %>% select(1,5)
         unique(df)
-      })
+      }, rownames = FALSE
+      )
     })
     
     remove_modal_spinner()
@@ -467,8 +459,7 @@ function(input, output, session) {
     
     dtMetadata <<- readRDS(paste0(corpusPathSession, "/processed/corpus/metadata.rds"))
     corp <<- readRDS(paste0(corpusPathSession, "/processed/corpus/corpus.rds"))
-    #tokens <<- readRDS(paste0(corpusPathSession, "/processed/corpus/tokens.rds"))
-    
+    ntokens <<- readRDS(paste0(corpusPathSession, "/processed/corpus/ntokens.rds"))
     
     termList <- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/",currentCorpus,"/processed/terminology/"), recursive = FALSE))
 
@@ -511,7 +502,7 @@ function(input, output, session) {
       dtTermExtracted <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyExtracted.rds"))
       
     }
-    
+    print("Actualizando botones")
     reactiveTerm$data <<- tableTerms
     reactiveListTerm$data <<- termsList
     reactiveCurrentCorpus$data <<- currentCorpus
@@ -539,20 +530,22 @@ function(input, output, session) {
                             choices = termList,
                             selected = termList[1]
     )
-    ntokens <- ntoken(corp)
-    
+
+    print("Actualizando tablas")
     #DATOS DE TERMINOLOGÍA
     output$TermExtracted = DT::renderDataTable({
       dtTermExtracted
-    })
+    }, #rownames = FALSE
+    )
     
     output$termFull = DT::renderDataTable({
       dtTermFull %>% select (1,4,9, 10, 11, 18)
-    })
+    }, #rownames = FALSE
+    )
     
     #Contextualizar Terminologías
     output$dtTermsRaw = DT::renderDataTable(
-      tableTerms %>% select(1,5),selection = 'single'
+      tableTerms %>% select(1,5),selection = 'single', rownames = FALSE
     )
     
     observeEvent(input$dtTermsRaw_rows_selected, {
@@ -562,7 +555,8 @@ function(input, output, session) {
         df$context <- paste(df[,2],toupper(df[,3]),df[,4])
         df <- df %>% select(1,5)
         unique(df)
-      })
+      }, rownames = FALSE
+      )
     })
     
     # Estadisticas básicas
@@ -575,6 +569,7 @@ function(input, output, session) {
       autoWidth = FALSE,
       columnDefs = list(list(width = '10%', targets = c(1,3)))
       )
+    , rownames = FALSE
     )
     
     #Corpus Actual
@@ -627,7 +622,8 @@ function(input, output, session) {
 
   output$dtTerminology = DT::renderDataTable({
     isolate(reactiveTerm$data)
-  })
+  }, #rownames = FALSE
+  )
   
   observe( {
     DT::replaceData(proxy, reactiveTerm$data, resetPaging = FALSE) 
@@ -851,6 +847,7 @@ function(input, output, session) {
   #Tablas comprarativas
   #Primera
   solapamiento = 0
+  tableComp2 = data.frame()
   observeEvent(input$termComp1, {
     
     if(!emptyCorpus){
@@ -863,7 +860,7 @@ function(input, output, session) {
     }
     
     output$tdTermsComp1 = DT::renderDataTable(
-      tableComp1
+      tableComp1, rownames = FALSE
     )
     
     solapamiento <<- length(tableComp1$keyword %in% tableComp2$keyword)
@@ -893,7 +890,7 @@ function(input, output, session) {
     }
     
     output$tdTermsComp2 = DT::renderDataTable(
-      tableComp2
+      tableComp2, rownames = FALSE
     )
     
     solapamiento <<- length(tableComp2$keyword %in% tableComp1$keyword)
