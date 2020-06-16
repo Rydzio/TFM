@@ -110,8 +110,8 @@ function(input, output, session) {
       tableTerms <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminology.rds"))
       listChangesTerms <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyChanges.rds"))
       
-      dtTermFull <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyFull.rds"))
-      dtTermExtracted <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyExtracted.rds"))
+      #dtTermFull <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyFull.rds"))
+      #dtTermExtracted <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyExtracted.rds"))
       
       emptyCorpus <<- FALSE
     }
@@ -396,8 +396,8 @@ function(input, output, session) {
       tableTerms <<- data.frame()
       listChangesTerms <<- data.frame()
       
-      dtTermFull <<- data.frame()
-      dtTermExtracted <<- data.frame()
+      #dtTermFull <<- data.frame()
+      #dtTermExtracted <<- data.frame()
       
     } else {
       if(!(oldTerm == currentTerm)){
@@ -407,8 +407,8 @@ function(input, output, session) {
         tableTerms <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminology.rds"))
         listChangesTerms <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyChanges.rds"))
         
-        dtTermFull <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyFull.rds"))
-        dtTermExtracted <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyExtracted.rds"))
+        #dtTermFull <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyFull.rds"))
+        #dtTermExtracted <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyExtracted.rds"))
       }
     }
     
@@ -468,7 +468,7 @@ function(input, output, session) {
       currentTerm <<- c()
       # tableTerms <<- data.frame()
       # dtTermFull <<- data.frame()
-      # dtTermExtracted <<- data.frame()
+      # #dtTermExtracted <<- data.frame()
 
       termList <- c("Todavia no has creado ninguna terminología")
       emptyCorpus <<- TRUE
@@ -489,8 +489,8 @@ function(input, output, session) {
       tableTerms <<- data.frame()
       listChangesTerms <<- data.frame()
       
-      dtTermFull <<- data.frame()
-      dtTermExtracted <<- data.frame()
+      #dtTermFull <<- data.frame()
+      #dtTermExtracted <<- data.frame()
       
     } else {
       print("leemos CC")
@@ -498,8 +498,8 @@ function(input, output, session) {
       tableTerms <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminology.rds"))
       listChangesTerms <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyChanges.rds"))
       
-      dtTermFull <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyFull.rds"))
-      dtTermExtracted <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyExtracted.rds"))
+      #dtTermFull <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyFull.rds"))
+      #dtTermExtracted <<- readRDS(paste0(corpusPathSession, "/processed/terminology/",currentTerm,"/terminologyExtracted.rds"))
       
     }
     print("Actualizando botones")
@@ -533,15 +533,15 @@ function(input, output, session) {
 
     print("Actualizando tablas")
     #DATOS DE TERMINOLOGÍA
-    output$TermExtracted = DT::renderDataTable({
-      dtTermExtracted
-    }, #rownames = FALSE
-    )
+    # output$TermExtracted = DT::renderDataTable({
+    #   dtTermExtracted
+    # }, #rownames = FALSE
+    # )
     
-    output$termFull = DT::renderDataTable({
-      dtTermFull %>% select (1,4,9, 10, 11, 18)
-    }, #rownames = FALSE
-    )
+    # output$termFull = DT::renderDataTable({
+    #   dtTermFull %>% select (1,4,9, 10, 11, 18)
+    # }, #rownames = FALSE
+    # )
     
     #Contextualizar Terminologías
     output$dtTermsRaw = DT::renderDataTable(

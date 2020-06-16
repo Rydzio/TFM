@@ -98,7 +98,6 @@ createCorpus <- function(ruta, nameCorpus, nThreads, encoding){
   print("Contando tokens: ")
   tic()
   ntokens <- ntoken(quancorpusDocs)
-  print(ntokens)
   toc()
   
   #Limpiamos los textos del corpus de caracteres extraños que empeoren nuestra extracción de terminos.

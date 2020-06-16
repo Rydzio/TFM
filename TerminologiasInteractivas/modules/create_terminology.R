@@ -33,21 +33,26 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
   # tDocs <- texts(quancorpusDocs) #No tarda nada. 
   # toc()
   
-  #Descarga de modelo selecionado para la extraccion de terminos
-  print("Descargando modelo: ")
-  model <- udpipe_download_model(language = idioma) #Siempre la ultima version
-  path <- model$file_model
-  
-  #Extracción de terminos
-  print("Extrayendo Terminos: ")
-  tic()
-  x <- udpipe(tDocs, path, parallel.cores = hilos)
-  toc()
-  
-  x$phrase_tag <- as_phrasemachine(x$upos, 
-                                   type = "upos" #Puede ser tambiÃ©n "penn-treebank"
-  )
-  
+            print(paste0(getwd(),"/data/corpus_data/",nameCorpus,"/processed/terminology/terminologyFull",idioma,".rds"))
+  if(!file.exists(paste0(getwd(),"/data/corpus_data/",nameCorpus,"/processed/terminology/terminologyFull",idioma,".rds"))){
+    #Descarga de modelo selecionado para la extraccion de terminos
+    print("Descargando modelo: ")
+    model <- udpipe_download_model(language = idioma) #Siempre la ultima version
+    path <- model$file_model
+    
+    #Extracción de terminos
+    print("Extrayendo Terminos: ")
+    tic()
+    x <- udpipe(tDocs, path, parallel.cores = hilos)
+    toc()
+    
+    x$phrase_tag <- as_phrasemachine(x$upos, 
+                                     type = "upos" #Puede ser tambiÃ©n "penn-treebank"
+    )
+    saveRDS(x, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/terminologyFull",idioma,".rds"))
+  } else {
+    x <<- readRDS(paste0(getwd(), "/data/corpus_data/",nameCorpus,"/processed/terminology/terminologyFull",idioma,".rds"))
+  }
   #Extraccion de terminología segun patron
   print("Extrayendo Terminologia: ")
   tic()
@@ -193,6 +198,7 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
       rbind(statsPOS2, stats) -> stats
     }
     print("Extraido")
+    toc()
     #doc_id - keyword - ngram - freq
     
     #Calculamos la puntuación TF_IDF-------------------------------------------------
@@ -289,6 +295,8 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
     
   } else {
     
+    print("Extraccion de terminos por documento: ")
+    tic()
     stats <<- keywords_rake(x = x, 
                             term = "lemma", 
                             group = "doc_id", 
@@ -296,10 +304,8 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
     )
     
     #keyword - ngram - freq - rake
-    
-    print("Extraccion de terminos por documento: ")
+    toc()
     tic()
-    
     #Calculamos la puntuación c-value------------------------------------------------
     print("Puntuación c-value: ")
     tic()
@@ -351,7 +357,6 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
   
   #Guardado de datos
   saveRDS(terminology, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/",nameTerm,"/terminology.rds"))
-  saveRDS(x, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/",nameTerm,"/terminologyFull.rds"))
   saveRDS(data.frame(), paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/",nameTerm,"/terminologyChanges.rds"))
   saveRDS(stats, paste0(getwd(), "/data/corpus_data/", nameCorpus, "/processed/terminology/",nameTerm,"/terminologyExtracted.rds"))
   
