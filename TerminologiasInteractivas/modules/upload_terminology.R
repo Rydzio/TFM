@@ -110,7 +110,7 @@ upload_terminology <- function(statsPOSSplit, currentCorpus, termName){
         terminology$Frecuencia <- as.character(terminology$Frecuencia)
         terminology$tf_idf <- as.character(terminology$tf_idf)
         terminology$RAKE <- as.character(terminology$RAKE)
-        terminology$cValue <- as.character(terminology$cValue)
+        terminology$cvalue <- as.character(terminology$cvalue)
         
       } else {
         statsPOSSplit <- data.frame("keyword" = as.character(statsPOSSplit$keyword), "ngram" = as.numeric(statsPOSSplit$ngram), "Frecuencia" = as.numeric(statsPOSSplit$Frecuencia))
@@ -224,6 +224,7 @@ upload_terminology <- function(statsPOSSplit, currentCorpus, termName){
     }
   } else {
     print("La terminología tiene que tener al menos una columna nombrada keywords")
+    terminology = data.frame()
   }
   
   #Guardado de datos

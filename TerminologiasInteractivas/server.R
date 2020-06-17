@@ -863,7 +863,7 @@ function(input, output, session) {
       tableComp1, rownames = FALSE
     )
     
-    solapamiento <<- length(tableComp1$keyword %in% tableComp2$keyword)
+    solapamiento <<- length(which(tableComp1$keyword %in% tableComp2$keyword))
     
     output$Solapamiento <- renderText({
       solapamiento #<- length(tableComp2$keyword %in% tableComp1$keyword)
@@ -893,7 +893,7 @@ function(input, output, session) {
       tableComp2, rownames = FALSE
     )
     
-    solapamiento <<- length(tableComp2$keyword %in% tableComp1$keyword)
+    solapamiento <<- length(which(tableComp2$keyword %in% tableComp1$keyword))
     
     output$Solapamiento <- renderText({
       solapamiento #<- length(tableComp2$keyword %in% tableComp1$keyword)

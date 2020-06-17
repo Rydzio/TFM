@@ -14,9 +14,9 @@ hilos = detectCores()
 #Ruta de trabajo
 setwd("~/TFM")
 
-ruta = "/doc"
+#ruta = "/doc"
 #ruta = "/legal"
-#ruta = "/InnoSpace/data/corpus_data/Airbus/raw/documents"
+ruta = "~/../InnoSpace/data/corpus_data/Airbus/raw/documents/AMM A310 Jun 15/"
 
 #Leer un corpus
 tic()
@@ -43,10 +43,10 @@ quanteda_options(threads = hilos)
 quancorpusDocs <- corpus(docs)
 
 #Obtenemos un resumen del corpus que hemops creado
-summ <- summary(quancorpusDocs,    #Esto tarda unos segundos. Types es el num de tokens Únicos.
-                n = nrow(docs))    #Por defecto son 100
-sum(summ$Sentences)
-sum(summ$Tokens)
+#summ <- summary(quancorpusDocs,    #Esto tarda unos segundos. Types es el num de tokens Únicos.
+               # n = nrow(docs))    #Por defecto son 100
+#sum(summ$Sentences)
+#sum(summ$Tokens)
 
 #Puedo sacar los textos 
 tDocs <- texts(quancorpusDocs) #No tarda nada. 
@@ -116,24 +116,7 @@ for (doc_id in xSplit) {
 toc()
 statsPOSSplit
 statsPOSSplitcopia <- statsPOSSplit
-```
-
-TF_IDF
-```{r}
-library(tidytext)
-
-statsPOSSplit <- statsPOSSplit %>%
-  bind_tf_idf(keyword, doc_id, freq)
-
-statsPOSSplit[order(statsPOSSplit$keyword),]
-```
-
-TF_IDF para el corpus completo
-```{r}
-statsPOSTF_IDF <- select(statsPOSSplit, -c(doc_id, tf, idf))
-statsPOSTF_IDF <- aggregate(statsPOSTF_IDF$tf_idf, by=list(keyword=statsPOSTF_IDF$keyword), FUN=sum)
-colnames(statsPOSTF_IDF)[2] <- "tf_idf"
-statsPOSTF_IDF
+statsPOSSplitcopia2 <- statsPOSSplitcopia
 ```
 
 RAKE Score para las palabras divididas en funhción del documento al que pertenecen
@@ -177,12 +160,11 @@ Unimos el resultado de la puntuación RAKE y presentamos la tabla
 ```{r}
 
 cbind(statsPOSSplit, score) -> statsPOSRAKEScore
-colnames(statsPOSRAKEScore)[4] <- "RAKE"
-statsPOSRAKEScore <- statsPOSRAKEScore[order(-statsPOSRAKEScore$RAKE),]
+colnames(statsPOSRAKEScore)[5] <- "RAKE"
 statsPOSRAKEScore
 ```
 
-DIVIDIDA
+LAPPLY
 RAKE Score para las palabras divididas en funhción del documento al que pertenecen
 ```{r}
 probando <- strsplit(statsPOSSplit$keyword, split = " ")
@@ -194,26 +176,16 @@ tabla <- data.frame(tabla)
 
 Puntuación RAKE dividida por documentos
 ```{r}
-
-library(foreach)
-library(doParallel)
 tic()
-score = c()
-pb = txtProgressBar(min = 0, max = nrow(statsPOSSplit), initial = 0)
+score2 = c()
 
-cores=detectCores()
-# Example registering clusters
-cl <- parallel::makeCluster(cores[1]-1)
-doParallel::registerDoParallel(cl)
-
-res <- foreach(keyIndex = 1:nrow(statsPOSSplit), .combine = list) %dopar%  {
-  
-  if(statsPOSSplit[keyIndex, "ngram"] == 1){
-    score <<- append(score, 0)
+fprueba = function(x){ 
+  if(as.integer(x[3]) == 1){
+    0
   } else {
 
-    keySplt <- strsplit(statsPOSSplit[keyIndex, "keyword"], " ")
-    keyDegree <<- statsPOSSplit[keyIndex, "ngram"] - 1
+    keySplt <- strsplit(x[2], " ")
+    keyDegree <<- as.integer(x[3]) - 1
   
     tempScore <- c()
     for(word in keySplt){
@@ -221,37 +193,66 @@ res <- foreach(keyIndex = 1:nrow(statsPOSSplit), .combine = list) %dopar%  {
       tempScore <- append(tempScore, keyDegree / tabla[tabla$probando %in% word, ]$Freq)
       
     }
-    score <<- append(score, sum(tempScore))
     sum(tempScore)
   }
-  setTxtProgressBar(pb,keyIndex)
 }
 
-parallel::stopCluster(cl)
+score2 <- apply(statsPOSSplit, 1, fprueba)
 toc()
-score
 ```
 
+
+Unimos el resultado de la puntuación RAKE y presentamos la tabla
 ```{r}
-cbind(statsPOSRAKEScore, res) -> statsPOSRAKEScore
-colnames(statsPOSRAKEScore)[4] <- "RAKE"
+cbind(statsPOSRAKEScore, score2) -> statsPOSRAKEScore
+colnames(statsPOSRAKEScore)[6] <- "RAKE2"
 statsPOSRAKEScore <- statsPOSRAKEScore[order(-statsPOSRAKEScore$RAKE),]
 statsPOSRAKEScore
 ```
 
 
+LAPPLY 2
+RAKE Score para las palabras divididas en funhción del documento al que pertenecen
 ```{r}
-library(foreach)
-library(doParallel)
+probando <- strsplit(statsPOSSplit$keyword, split = " ")
+data.frame(splited = unlist(probando)) -> probando
 
-
-cores=detectCores()
-# Example registering clusters
-cl <- parallel::makeCluster(cores[1]-1)
-doParallel::registerDoParallel(cl)
-foreach(i = 1:10, .combine = 'c') %dopar% {
-  sqrt(i)
-}
-parallel::stopCluster(cl)
+table(probando) -> tabla
+tabla <- data.frame(tabla)
 ```
 
+Puntuación RAKE dividida por documentos
+```{r}
+tic()
+score3 = c()
+
+fpruebaInterno = function(x) {
+  append(tempScore, keyDegree / tabla[tabla$probando %in% x, ]$Freq)
+}
+
+fprueba = function(x){ 
+  if(as.integer(x[3]) == 1){
+    0
+  } else {
+
+    keySplt <- strsplit(x[2], " ")
+    keyDegree <<- as.integer(x[3]) - 1
+  
+    tempScore <- c()
+    tempScore <- apply(keySplt, 1, fpruebaInterno)
+    sum(tempScore)
+  }
+}
+
+score3 <- apply(statsPOSSplit, 1, fprueba)
+toc()
+```
+
+
+Unimos el resultado de la puntuación RAKE y presentamos la tabla
+```{r}
+cbind(statsPOSRAKEScore, score2) -> statsPOSRAKEScore
+colnames(statsPOSRAKEScore)[7] <- "RAKE3"
+statsPOSRAKEScore <- statsPOSRAKEScore[order(-statsPOSRAKEScore$RAKE),]
+statsPOSRAKEScore
+```
