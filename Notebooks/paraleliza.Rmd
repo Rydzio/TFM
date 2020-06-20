@@ -14,9 +14,9 @@ hilos = detectCores()
 #Ruta de trabajo
 setwd("~/TFM")
 
-#ruta = "/doc"
+ruta = "/doc"
 #ruta = "/legal"
-ruta = "~/../InnoSpace/data/corpus_data/Airbus/raw/documents/AMM A310 Jun 15/"
+#ruta = "~/InnoSpace/data/corpus_data/Airbus/raw/documents/AMM A310 Jun 15/"
 
 #Leer un corpus
 tic()
@@ -206,53 +206,108 @@ Unimos el resultado de la puntuación RAKE y presentamos la tabla
 ```{r}
 cbind(statsPOSRAKEScore, score2) -> statsPOSRAKEScore
 colnames(statsPOSRAKEScore)[6] <- "RAKE2"
-statsPOSRAKEScore <- statsPOSRAKEScore[order(-statsPOSRAKEScore$RAKE),]
 statsPOSRAKEScore
 ```
 
 
-LAPPLY 2
-RAKE Score para las palabras divididas en funhción del documento al que pertenecen
+AGRUPAMOS
 ```{r}
-probando <- strsplit(statsPOSSplit$keyword, split = " ")
-data.frame(splited = unlist(probando)) -> probando
-
-table(probando) -> tabla
-tabla <- data.frame(tabla)
+#Agrupamos la terminologia en funcion del documento, generando una terminología completa del corpus entero.
+    stats <- select(statsPOSRAKEScore, -c(doc_id))
+    stats <- aggregate(list(Frecuencia=stats$freq, RAKE1=stats$RAKE, RAKE2=stats$RAKE2), by=list(keyword=stats$keyword, ngram=stats$ngram), FUN=sum)
+    stats
 ```
 
-Puntuación RAKE dividida por documentos
+
+
+C-value para el conjunto del corpus completo.
 ```{r}
+pb = txtProgressBar(min = 0, max = nrow(stats), initial = 0)
+
+cValue <- c()
 tic()
-score3 = c()
+for (keyIndex in 1:nrow(stats)) {
+  #Extraemos el termino candidato
+  candidate <- stats[keyIndex, "keyword"]
+  #Extraemos la frecuencia del candidato en el corpùs
+  freqCandidate <- stats[keyIndex, "Frecuencia"]
 
-fpruebaInterno = function(x) {
-  append(tempScore, keyDegree / tabla[tabla$probando %in% x, ]$Freq)
-}
+  #Buscamos terminos que contengan a nuestro candidato. 
+  coincidencias <- stats[grepl(candidate ,stats$keyword, fixed = TRUE), ]
 
-fprueba = function(x){ 
-  if(as.integer(x[3]) == 1){
-    0
+  #Numero de coincidencias
+  ncoincidencias <- nrow(coincidencias)
+  if(ncoincidencias == 1){
+    #El candidato no esta contenido en otro termino
+    #Calculamos c-value
+    res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate
+    #Almacenamos el resultado
+    append(cValue, res) ->> cValue 
   } else {
-
-    keySplt <- strsplit(x[2], " ")
-    keyDegree <<- as.integer(x[3]) - 1
-  
-    tempScore <- c()
-    tempScore <- apply(keySplt, 1, fpruebaInterno)
-    sum(tempScore)
+    sumatorio <- sum(coincidencias$freq)
+    res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate - (1 / ncoincidencias) * sumatorio
+    #Almacenamos el resultado
+    append(cValue, res) ->> cValue 
   }
+  setTxtProgressBar(pb,keyIndex)
 }
-
-score3 <- apply(statsPOSSplit, 1, fprueba)
 toc()
+print("fin")
+
+cbind(stats, cValue) -> statsPOSCVALUE
+
+colnames(statsPOSCVALUE)[6] <- "cvalue"
+```
+
+```{r}
+statsPOSCVALUE
 ```
 
 
-Unimos el resultado de la puntuación RAKE y presentamos la tabla
+C-value para el conjunto del corpus completo APPLy
 ```{r}
-cbind(statsPOSRAKEScore, score2) -> statsPOSRAKEScore
-colnames(statsPOSRAKEScore)[7] <- "RAKE3"
-statsPOSRAKEScore <- statsPOSRAKEScore[order(-statsPOSRAKEScore$RAKE),]
-statsPOSRAKEScore
+cValue2 <- c()
+tic()
+
+fcvalue = function(keyIndex) {
+  #Extraemos el termino candidato
+  #candidate <- stats[keyIndex, "keyword"]
+  candidate <- keyIndex[1]
+  #Extraemos la frecuencia del candidato en el corpùs
+  #freqCandidate <- stats[keyIndex, "Frecuencia"]
+  freqCandidate <- keyIndex[3]
+
+  #print(class(candidate))
+  # #Buscamos terminos que contengan a nuestro candidato.
+  coincidencias <- stats[grepl(candidate ,stats$keyword, fixed = TRUE), ]
+  
+  # #Numero de coincidencias
+  ncoincidencias <- nrow(coincidencias)
+  if(ncoincidencias == 1){
+     #El candidato no esta contenido en otro termino
+     #Calculamos c-value
+     log2(length(strsplit(candidate, " ")[[1]])) * as.integer(freqCandidate) -> res
+     #print(res)
+     res
+     #Almacenamos el resultado
+   
+   } else {
+     sumatorio <- sum(coincidencias$freq)
+     log2(length(strsplit(candidate, " ")[[1]])) * as.integer(freqCandidate) - (1 / ncoincidencias) * sumatorio -> res
+     #print(res)
+     res
+     #Almacenamos el resultado
+   }
+}
+
+cValue2 = apply(stats, 1, fcvalue)
+
+toc()
+print("fin")
+
+
+
+cbind(statsPOSCVALUE, cValue2) -> statsPOSCVALUE
+colnames(statsPOSCVALUE)[7] <- "cvalue"
+statsPOSCVALUE
 ```

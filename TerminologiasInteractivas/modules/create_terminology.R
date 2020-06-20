@@ -17,6 +17,7 @@
 #-------------------------------------------------------------
 
 createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, paternType, idioma){
+  
   tic()
   #Creacion de los directorios
   print("Creando Directorios: ")
@@ -26,14 +27,7 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
   
   #Variables
   hilos = nThreads
-
-  #Creacion de corpus quanteda
-  # print("Extracción de textos del corpus: ")
-  # tic()
-  # tDocs <- texts(quancorpusDocs) #No tarda nada. 
-  # toc()
   
-            print(paste0(getwd(),"/data/corpus_data/",nameCorpus,"/processed/terminology/terminologyFull",idioma,".rds"))
   if(!file.exists(paste0(getwd(),"/data/corpus_data/",nameCorpus,"/processed/terminology/terminologyFull",idioma,".rds"))){
     #Descarga de modelo selecionado para la extraccion de terminos
     print("Descargando modelo: ")
@@ -103,16 +97,13 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
     table(terminosPorSeparado) -> tablaPOS
     tablaPOS <- data.frame(tablaPOS)
     
-    score = c()
-    pb = txtProgressBar(min = 0, max = nrow(stats), initial = 0)#Prescindible
-    for (keyIndex in 1:nrow(stats)) {
-      
-      if(stats[keyIndex, "ngram"] == 1){
-        score <- append(score, 0)
+    frake = function(x){ 
+      if(as.integer(x[2]) == 1){
+        0
       } else {
         
-        keySplt <- strsplit(stats[keyIndex, "keyword"], " ")
-        keyDegree <<- stats[keyIndex, "ngram"] - 1
+        keySplt <- strsplit(x[1], " ")
+        keyDegree <<- as.integer(x[2]) - 1
         
         tempScore <- c()
         for(word in keySplt){
@@ -120,10 +111,11 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
           tempScore <- append(tempScore, keyDegree / tablaPOS[tablaPOS$terminosPorSeparado %in% word, ]$Freq)
           
         }
-        score <- append(score, sum(tempScore))
+        sum(tempScore)
       }
-      setTxtProgressBar(pb,keyIndex)#Prescindible
     }
+    score <- apply(stats, 1, frake)
+    
     
     cbind(stats, score) -> stats
     colnames(stats)[5] <- "RAKE"
@@ -131,34 +123,31 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
     #Calculamos la puntuación c-value------------------------------------------------
     print("Puntuación c-value: ")
     tic()
-    pb = txtProgressBar(min = 0, max = nrow(stats), initial = 0) #Prescindible
-    
-    cValue <- c()
-    for (keyIndex in 1:nrow(stats)) {
+    fcvalue = function(keyIndex) {
       #Extraemos el termino candidato
-      candidate <- stats[keyIndex, "keyword"]
+      #candidate <- stats[keyIndex, "keyword"]
+      candidate <- keyIndex[1]
       #Extraemos la frecuencia del candidato en el corpùs
-      freqCandidate <- stats[keyIndex, "Frecuencia"]
+      #freqCandidate <- stats[keyIndex, "Frecuencia"]
+      freqCandidate <- keyIndex[3]
       
-      #Buscamos terminos que contengan a nuestro candidato. 
+      #print(class(candidate))
+      # #Buscamos terminos que contengan a nuestro candidato.
       coincidencias <- stats[grepl(candidate ,stats$keyword, fixed = TRUE), ]
       
-      #Numero de coincidencias
+      # #Numero de coincidencias
       ncoincidencias <- nrow(coincidencias)
       if(ncoincidencias == 1){
         #El candidato no esta contenido en otro termino
         #Calculamos c-value
-        res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate
-        #Almacenamos el resultado
-        append(cValue, res) -> cValue 
+        log2(length(strsplit(candidate, " ")[[1]])) * as.integer(freqCandidate)
       } else {
         sumatorio <- sum(coincidencias$Frecuencia)
-        res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate - (1 / ncoincidencias) * sumatorio
-        #Almacenamos el resultado
-        append(cValue, res) -> cValue 
+        log2(length(strsplit(candidate, " ")[[1]])) * as.integer(freqCandidate) - (1 / ncoincidencias) * sumatorio
       }
-      setTxtProgressBar(pb,keyIndex)#Prescindible
     }
+    
+    cValue <- apply(stats, 1, fcvalue)
     
     cbind(stats, cValue) -> stats
     colnames(stats)[6] <- "cvalue"
@@ -214,6 +203,7 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
     stats <- aggregate(list(Frecuencia=stats$freq, tf_idf=stats$tf_idf), by=list(keyword=stats$keyword, ngram=stats$ngram), FUN=sum)
     toc()
     #Calculamos la puntuación RAKE---------------------------------------------------
+    #keyword - ngram - freq - tf_idf
     print("Puntuación RAKE: ")
     tic()
     terminosPorSeparado <- strsplit(stats$keyword, split = " ")
@@ -221,16 +211,13 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
     table(terminosPorSeparado) -> tablaPOS
     tablaPOS <- data.frame(tablaPOS)
     
-    score = c()
-    pb = txtProgressBar(min = 0, max = nrow(stats), initial = 0)#Prescindible
-    for (keyIndex in 1:nrow(stats)) {
-      
-      if(stats[keyIndex, "ngram"] == 1){
-        score <- append(score, 0)
+    frake = function(x){ 
+      if(as.integer(x[2]) == 1){
+        0
       } else {
         
-        keySplt <- strsplit(stats[keyIndex, "keyword"], " ")
-        keyDegree <<- stats[keyIndex, "ngram"] - 1
+        keySplt <- strsplit(x[1], " ")
+        keyDegree <<- as.integer(x[2]) - 1
         
         tempScore <- c()
         for(word in keySplt){
@@ -238,10 +225,10 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
           tempScore <- append(tempScore, keyDegree / tablaPOS[tablaPOS$terminosPorSeparado %in% word, ]$Freq)
           
         }
-        score <- append(score, sum(tempScore))
+        sum(tempScore)
       }
-      setTxtProgressBar(pb,keyIndex)#Prescindible
     }
+    score <- apply(stats, 1, frake)
     
     cbind(stats, score) -> stats
     colnames(stats)[5] <- "RAKE"
@@ -249,34 +236,31 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
     #Calculamos la puntuación c-value------------------------------------------------
     print("Puntuación c-value: ")
     tic()
-    pb = txtProgressBar(min = 0, max = nrow(stats), initial = 0) #Prescindible
-    
-    cValue <- c()
-    for (keyIndex in 1:nrow(stats)) {
+    fcvalue = function(keyIndex) {
       #Extraemos el termino candidato
-      candidate <- stats[keyIndex, "keyword"]
+      #candidate <- stats[keyIndex, "keyword"]
+      candidate <- keyIndex[1]
       #Extraemos la frecuencia del candidato en el corpùs
-      freqCandidate <- stats[keyIndex, "Frecuencia"]
+      #freqCandidate <- stats[keyIndex, "Frecuencia"]
+      freqCandidate <- keyIndex[3]
       
-      #Buscamos terminos que contengan a nuestro candidato. 
+      #print(class(candidate))
+      # #Buscamos terminos que contengan a nuestro candidato.
       coincidencias <- stats[grepl(candidate ,stats$keyword, fixed = TRUE), ]
       
-      #Numero de coincidencias
+      # #Numero de coincidencias
       ncoincidencias <- nrow(coincidencias)
       if(ncoincidencias == 1){
         #El candidato no esta contenido en otro termino
         #Calculamos c-value
-        res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate
-        #Almacenamos el resultado
-        append(cValue, res) -> cValue 
+        log2(length(strsplit(candidate, " ")[[1]])) * as.integer(freqCandidate)
       } else {
         sumatorio <- sum(coincidencias$Frecuencia)
-        res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate - (1 / ncoincidencias) * sumatorio
-        #Almacenamos el resultado
-        append(cValue, res) -> cValue 
+        log2(length(strsplit(candidate, " ")[[1]])) * as.integer(freqCandidate) - (1 / ncoincidencias) * sumatorio
       }
-      setTxtProgressBar(pb,keyIndex)#Prescindible
     }
+    cValue <- apply(stats, 1, fcvalue)
+    
     
     cbind(stats, cValue) -> stats
     colnames(stats)[6] <- "cvalue"
@@ -309,34 +293,32 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
     #Calculamos la puntuación c-value------------------------------------------------
     print("Puntuación c-value: ")
     tic()
-    pb = txtProgressBar(min = 0, max = nrow(stats), initial = 0) #Prescindible
     
-    cValue <- c()
-    for (keyIndex in 1:nrow(stats)) {
+    fcvalue = function(keyIndex) {
       #Extraemos el termino candidato
-      candidate <- stats[keyIndex, "keyword"]
+      #candidate <- stats[keyIndex, "keyword"]
+      candidate <- keyIndex[1]
       #Extraemos la frecuencia del candidato en el corpùs
-      freqCandidate <- stats[keyIndex, "freq"]
+      #freqCandidate <- stats[keyIndex, "Frecuencia"]
+      freqCandidate <- keyIndex[3]
       
-      #Buscamos terminos que contengan a nuestro candidato. 
+      #print(class(candidate))
+      # #Buscamos terminos que contengan a nuestro candidato.
       coincidencias <- stats[grepl(candidate ,stats$keyword, fixed = TRUE), ]
       
-      #Numero de coincidencias
+      # #Numero de coincidencias
       ncoincidencias <- nrow(coincidencias)
       if(ncoincidencias == 1){
         #El candidato no esta contenido en otro termino
         #Calculamos c-value
-        res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate
-        #Almacenamos el resultado
-        append(cValue, res) -> cValue 
+        log2(length(strsplit(candidate, " ")[[1]])) * as.integer(freqCandidate)
+        
       } else {
-        sumatorio <- sum(coincidencias$freq)
-        res <- log2(length(strsplit(candidate, " ")[[1]])) * freqCandidate - (1 / ncoincidencias) * sumatorio
-        #Almacenamos el resultado
-        append(cValue, res) -> cValue 
+        sumatorio <- sum(coincidencias$Frecuencia)
+        log2(length(strsplit(candidate, " ")[[1]])) * as.integer(freqCandidate) - (1 / ncoincidencias) * sumatorio
       }
-      setTxtProgressBar(pb,keyIndex)#Prescindible
     }
+    cValue <- apply(stats, 1, fcvalue)
     
     cbind(stats, cValue) -> stats
     colnames(stats)[5] <- "cvalue"
