@@ -1,6 +1,10 @@
 
 upload_terminology <- function(statsPOSSplit, currentCorpus, termName){
   
+  op <- pboptions(type = "timer") # default
+  #system.time(res1pb <- pbapply(1:B, function(i) fun(bid[,i])))
+  pboptions(op)
+  
   if("keyword" %in% colnames(statsPOSSplit)){
     statsPOSSplit$keyword <- as.character(statsPOSSplit$keyword)
     
@@ -53,7 +57,7 @@ upload_terminology <- function(statsPOSSplit, currentCorpus, termName){
             sum(tempScore)
           }
         }
-        score <- apply(statsPOSSplit, 1, frake)
+        score <- pbapply(statsPOSSplit, 1, frake)
         
         # score = c()
         # pb = txtProgressBar(min = 0, max = nrow(statsPOSSplit), initial = 0)#Prescindible
@@ -107,7 +111,7 @@ upload_terminology <- function(statsPOSSplit, currentCorpus, termName){
           }
         }
         
-        cValue <- apply(statsPOSSplit, 1, fcvalue)
+        cValue <- pbapply(statsPOSSplit, 1, fcvalue)
         
         cbind(statsPOSSplit, cValue) -> statsPOSSplit
         colnames(statsPOSSplit)[6] <- "cvalue"
@@ -192,7 +196,7 @@ upload_terminology <- function(statsPOSSplit, currentCorpus, termName){
             sum(tempScore)
           }
         }
-        score <- apply(statsPOSSplit, 1, frake)
+        score <- pbapply(statsPOSSplit, 1, frake)
         
         
         # cbind(stats, score) -> stats
@@ -250,7 +254,7 @@ upload_terminology <- function(statsPOSSplit, currentCorpus, termName){
           }
         }
         
-        cValue <- apply(statsPOSSplit, 1, fcvalue)
+        cValue <- pbapply(statsPOSSplit, 1, fcvalue)
         
         cbind(statsPOSSplit, cValue) -> statsPOSSplit
         colnames(statsPOSSplit)[5] <- "cvalue"

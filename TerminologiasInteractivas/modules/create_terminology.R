@@ -18,6 +18,10 @@
 
 createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, paternType, idioma){
   
+  op <- pboptions(type = "timer") # default
+  #system.time(res1pb <- pbapply(1:B, function(i) fun(bid[,i])))
+  pboptions(op)
+  
   tic()
   #Creacion de los directorios
   print("Creando Directorios: ")
@@ -114,7 +118,7 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
         sum(tempScore)
       }
     }
-    score <- apply(stats, 1, frake)
+    score <- pbapply(stats, 1, frake)
     
     
     cbind(stats, score) -> stats
@@ -147,7 +151,7 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
       }
     }
     
-    cValue <- apply(stats, 1, fcvalue)
+    cValue <- pbapply(stats, 1, fcvalue)
     
     cbind(stats, cValue) -> stats
     colnames(stats)[6] <- "cvalue"
@@ -228,7 +232,7 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
         sum(tempScore)
       }
     }
-    score <- apply(stats, 1, frake)
+    score <- pbapply(stats, 1, frake)
     
     cbind(stats, score) -> stats
     colnames(stats)[5] <- "RAKE"
@@ -259,7 +263,7 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
         log2(length(strsplit(candidate, " ")[[1]])) * as.integer(freqCandidate) - (1 / ncoincidencias) * sumatorio
       }
     }
-    cValue <- apply(stats, 1, fcvalue)
+    cValue <- pbapply(stats, 1, fcvalue)
     
     
     cbind(stats, cValue) -> stats
@@ -318,7 +322,7 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
         log2(length(strsplit(candidate, " ")[[1]])) * as.integer(freqCandidate) - (1 / ncoincidencias) * sumatorio
       }
     }
-    cValue <- apply(stats, 1, fcvalue)
+    cValue <- pbapply(stats, 1, fcvalue)
     
     cbind(stats, cValue) -> stats
     colnames(stats)[5] <- "cvalue"

@@ -23,6 +23,7 @@ library(shinybusy)
 library(tidytext)
 library(stringr)
 library(doParallel)
+library(pbapply)
 
 
 library(udpipe)
