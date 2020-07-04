@@ -136,7 +136,8 @@ fluidPage(
                                                                               "(A|N)*N(P+D*(A|N)*N)*",
                                                                               "((A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*(C(D(CD)*)*(A(CA)*|N)*N((P(CP)*)+(D(CD)*)*(A(CA)*|N)*N)*)*)",
                                                                               "N"),
-                                                                  selected = "N(A|N)*(PD*N(A|N)*)*"
+                                                                  selected = "N(A|N)*(PD*N(A|N)*)*",
+                                                                  options = list(create = TRUE)
                                                                   )
                                                    )
                                           ),

@@ -420,7 +420,7 @@ function(input, output, session) {
     
     #Contextualizar Terminologías
     output$dtTermsRaw = DT::renderDataTable(
-      tableTerms %>% select(1,4),selection = 'single', rownames = FALSE
+      tableTerms %>% select(1,5),selection = 'single', rownames = FALSE
     )
     
     observeEvent(input$dtTermsRaw_rows_selected, {
