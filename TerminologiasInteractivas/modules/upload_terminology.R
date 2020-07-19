@@ -240,7 +240,7 @@ upload_terminology <- function(statsPOSSplit, currentCorpus, termName){
           
           #print(class(candidate))
           # #Buscamos terminos que contengan a nuestro candidato.
-          coincidencias <- stats[grepl(candidate ,stats$keyword, fixed = TRUE), ]
+          coincidencias <- statsPOSSplit[grepl(candidate ,statsPOSSplit$keyword, fixed = TRUE), ]
           
           # #Numero de coincidencias
           ncoincidencias <- nrow(coincidencias)
