@@ -308,7 +308,6 @@ fluidPage(
                                )
                       ),
                       tabPanel("Comparar Terminologías", value = "CompTerm", icon = icon("less-than"),
-                               h5("Aquí irá el sistema comparativo de terminologías interactivo"),
                                fluidRow(
                                  column(6,
                                         wellPanel(
