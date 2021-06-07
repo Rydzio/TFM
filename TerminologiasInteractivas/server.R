@@ -324,7 +324,6 @@ function(input, output, session) {
   
   #Subir terminología ----------------------------------------------------------------------------------------------------------------------
   observeEvent(input$dirTerm, {
-    print("Hola")
     req(input$dirTerm)
     
     # when reading semicolon separated files,
@@ -371,10 +370,92 @@ function(input, output, session) {
                       choices = termList)
     
   })
+  
+  observeEvent(input$dirTermTXT, {
+    req(input$dirTermTXT)
+    show_modal_spinner(text = "Subiendo Terminología...")
+    
+    # when reading semicolon separated files,
+    # having a comma separator causes `read.csv` to error
+    tryCatch(
+      {
+        termLines <- readLines(input$dirTermTXT$datapath, encoding = "UTF-8")
+        #Procesar TXT, leer termino a termino y calcular los parametros necesarios
+        
+        df <- data.frame()
+        df_doc_id <- data.frame()
+        
+        for (keyword in termLines) {
+          #Numero de palabras
+          ngram <- sapply(strsplit(keyword, " "), length)
+          
+          #Ocurrencias en el corpus
+          tempKwick <- kwic(corp, pattern = phrase(keyword), valuetype = "fixed")
+
+          #Tabla con la frecuencia de cada termino en cada documento para tf_idf
+          temp <- data.frame("doc_id" = as.character(tempKwick$docname), 
+                                  "keyword" = as.character(tempKwick$keyword), 
+                                  "ngram" = rep(ngram, nrow(tempKwick)))
+          
+          if(nrow(temp) == 0){
+            Frecuencia <- nrow(tempKwick)
+            temp <- data.frame("doc_id" = "", 
+                               "keyword" = as.character(keyword), 
+                               "ngram" = ngram, 
+                               "Frecuencia" = Frecuencia)
+          } else {
+            temp$keyword <- as.character(temp$keyword)
+            temp$doc_id <- as.character(temp$doc_id)
+            temp %>% group_by(doc_id,keyword, ngram) %>% dplyr::summarize(Frecuencia = n(), .groups = 'drop') -> temp
+          }
+
+          df_doc_id <- rbind(df_doc_id, temp)
+        }
+     
+        #Calcular tf_idf, RAKE y cvalue es un trabajo largo y necesita tiempo
+      },
+      error = function(e) {
+        # return a safeError if a parsing error occurs
+        stop(safeError(e))
+      }
+    )
+    
+    #Creacion de los directorios
+    dir.create(paste0(getwd(),"/data/corpus_data/", currentCorpus, "/processed", "/terminology/", input$dirTermTXT$name))
+    
+    #df <- df %>% select(keyword, Autor, Fecha, Frecuencia)
+    #df$keyword <- as.character(df$keyword)
+    
+    upload_terminology(df_doc_id, currentCorpus, input$dirTermTXT$name)
+    print("subido")
+    
+    #Actualizamos las listas de corpus
+    termList <<- basename(list.dirs(path = paste0(getwd(), "/data/corpus_data/",currentCorpus,"/processed/terminology"), recursive = FALSE))
+    
+    updateRadioGroupButtons(session, 
+                            "termOpt", 
+                            label = NULL, 
+                            choices = termList
+    )
+    updateRadioGroupButtons(session, 
+                            "termComp1", 
+                            label = NULL, 
+                            choices = termList
+    )
+    updateRadioGroupButtons(session, 
+                            "termComp2", 
+                            label = NULL, 
+                            choices = termList
+    )
+    updateSelectInput(session,
+                      "TermForDownload",
+                      choices = termList)
+    remove_modal_spinner()
+  })
 
   #Cambiar de terminología -------------------------------------------------------------------------------------------------------
   observeEvent(input$termOpt, {
-    show_modal_spinner(text = "Cargando Terminología...")
+    show_modal_spinner(text = "Charging terminology...")
     print("Cambiar Terminología")
    
     if(!emptyCorpus){
@@ -420,7 +501,7 @@ function(input, output, session) {
     
     #Contextualizar Terminologías
     output$dtTermsRaw = DT::renderDataTable(
-      tableTerms %>% select(1,5),selection = 'single', rownames = FALSE
+      tableTerms %>% select(1,5),selection = 'single', rownames = FALSE, filter = 'top'
     )
     
     observeEvent(input$dtTermsRaw_rows_selected, {
@@ -430,7 +511,7 @@ function(input, output, session) {
         df$context <- paste(df[,2],toupper(df[,3]),df[,4])
         df <- df %>% select(1,5)
         unique(df)
-      }, rownames = FALSE
+      }, rownames = FALSE, filter = 'top'
       )
     })
     
@@ -439,7 +520,7 @@ function(input, output, session) {
   
   #Cambiar de corpus ------------------------------------------------------------------------------------------------------------
   observeEvent(input$corpusOpt, {
-    show_modal_spinner(text = "Cargando corpus...")
+    show_modal_spinner(text = "Charging corpus...")
     print("Cambiar Corpus")
     
     print(currentTerm)
@@ -545,7 +626,7 @@ function(input, output, session) {
     
     #Contextualizar Terminologías
     output$dtTermsRaw = DT::renderDataTable(
-      tableTerms %>% select(1,5),selection = 'single', rownames = FALSE
+      tableTerms %>% select(1,5),selection = 'single', rownames = FALSE, filter = 'top'
     )
     
     observeEvent(input$dtTermsRaw_rows_selected, {
@@ -555,7 +636,7 @@ function(input, output, session) {
         df$context <- paste(df[,2],toupper(df[,3]),df[,4])
         df <- df %>% select(1,5)
         unique(df)
-      }, rownames = FALSE
+      }, rownames = FALSE, filter = 'top'
       )
     })
     
@@ -569,7 +650,7 @@ function(input, output, session) {
       autoWidth = FALSE,
       columnDefs = list(list(width = '10%', targets = c(1,3)))
       )
-    , rownames = FALSE
+    , rownames = FALSE, filter = 'top'
     )
     
     #Corpus Actual
@@ -621,8 +702,15 @@ function(input, output, session) {
   })
 
   output$dtTerminology = DT::renderDataTable({
+    
+    reactiveTerm$data$ngram = as.numeric(reactiveTerm$data$ngram)
+    reactiveTerm$data$Frecuencia = as.numeric(reactiveTerm$data$Frecuencia)
+    reactiveTerm$data$tf_idf = as.numeric(reactiveTerm$data$tf_idf)
+    reactiveTerm$data$RAKE = as.numeric(reactiveTerm$data$RAKE)
+    reactiveTerm$data$cvalue = as.numeric(reactiveTerm$data$cvalue)
+    
     isolate(reactiveTerm$data)
-  }, #rownames = FALSE
+  },filter = 'top'#rownames = FALSE
   )
   
   observe( {
@@ -839,7 +927,7 @@ function(input, output, session) {
       modalDialog(
         renderDataTable({
           listChangesTerms
-        })
+        }, filter = 'top')
         
       ))
   })
@@ -860,7 +948,7 @@ function(input, output, session) {
     }
     
     output$tdTermsComp1 = DT::renderDataTable(
-      tableComp1, rownames = FALSE
+      tableComp1, rownames = FALSE, filter = 'top'
     )
     
     solapamiento <<- length(which(tableComp1$keyword %in% tableComp2$keyword))
@@ -890,7 +978,7 @@ function(input, output, session) {
     }
     
     output$tdTermsComp2 = DT::renderDataTable(
-      tableComp2, rownames = FALSE
+      tableComp2, rownames = FALSE, filter = 'top'
     )
     
     solapamiento <<- length(which(tableComp2$keyword %in% tableComp1$keyword))

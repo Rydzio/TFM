@@ -25,11 +25,13 @@ library(stringr)
 library(doParallel)
 library(pbapply)
 
+library(shi18ny)
+
 
 library(udpipe)
 
 
-setwd("~/TFM/TerminologiasInteractivas")
+setwd("~/GitHub/TFM/TerminologiasInteractivas")
 
 source(paste0(getwd(), "/modules/get_document_path.R"))
 source(paste0(getwd(), "/modules/create_corpus.R"))

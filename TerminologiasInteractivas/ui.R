@@ -12,31 +12,32 @@ fluidPage(
   use_waiter(),
   fluidRow(navbarPage(id = "inNavbar", title = strong("TermInteract"), 
                       # pestaña de inicio
-                      tabPanel("Inicio", value = "home", icon = icon("home"),
+                      tabPanel("Home", value = "home", icon = icon("home"),
                                #h2(strong("Inicio")),
                                #br(),
                                column(12, align = "center",
-                                 h1("Terminologías interactivas"),
-                                 h4(strong("Proyecto fin de master de Pedro Hernández Vegas \n")),
-                                 h5("Aplicación interactiva que permite la creación, modificacion y comparación de
-                                    terminologías creadas a traves de la extracciond de terminos con patrones POS y UPOS
-                                    de corpus de datos."),
+                                 h1("Interactive terminologies"),
+                                 h4(strong("Master's Thesis by Pedro Hernández Vegas and application of the paper TermInteract: 
+                                           An Online Tool for Terminologists Aimed at Providing Terminology Quality Metrics  \n")),
+                                 h5("Interactive application that allows the creation, modification and comparison of terminologies 
+                                    created by terminologies created through the extraction of terms with POS and UPOS patterns 
+                                    from corpora of data. from corpora of data."),
                                  tags$br(),
                                )
                                
                       ),
-                      tabPanel("Gestor de documentos", value = "add", icon = icon("folder-open"),
-                               column(12, align="center", h1("Seleccionar")),
+                      tabPanel("Documents Manager", value = "add", icon = icon("folder-open"),
+                               column(12, align="center", h1("Select")),
                                fluidRow(
                                  column(6, align = "center",
                                         wellPanel(
-                                          fluidRow(h4("El corpus seleccionado es: ")),
+                                          fluidRow(h4("Selected corpus is: ")),
                                           fluidRow(h2(strong(textOutput("docSelected"))))
                                         )
                                  ),
                                  column(6, align = "center",
                                         wellPanel(
-                                          fluidRow(h4("La terminología seleccionada es: ")),
+                                          fluidRow(h4("Selected terminology is: ")),
                                           fluidRow(h2(strong(textOutput("termSelected"))))
                                         )
                                  )
@@ -44,45 +45,45 @@ fluidPage(
                                fluidRow(
                                  column(6, 
                                         wellPanel(
-                                          fluidRow(radioGroupButtons("corpusOpt", label = h4(("Seleccione el Corpus sobre el que desea trabajar:")), justified= TRUE, choices = corpusList, selected = currentCorpus, direction = "vertical")),
+                                          fluidRow(radioGroupButtons("corpusOpt", label = h4(("Select a Corpus you want to work on:")), justified= TRUE, choices = corpusList, selected = currentCorpus, direction = "vertical")),
                                         )
                                  ),
                                  column(6, 
                                         wellPanel(
-                                          fluidRow(radioGroupButtons("termOpt", label = h4(("Seleccione la terminología sobre la que desea trabajar:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
+                                          fluidRow(radioGroupButtons("termOpt", label = h4(("Select a terminology you want to work on:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
                                         )
                                  ),
                                ), br(),
-                               column(12, align="center",h1("Crear")),
+                               column(12, align="center",h1("Create")),
                                fluidRow(
                                  column(6, 
                                         wellPanel(
-                                          fluidRow(column(12, h4(strong("Crear corpus")))),
+                                          fluidRow(column(12, h4(strong("Create a corpus")))),
                                           fluidRow(
                                             column(6,
-                                                   h5(strong("Documentos: ")),
-                                                   shinyDirButton("dir", "Seleccionar documentos", "Seleccionar documentos")
+                                                   h5(strong("Documents: ")),
+                                                   shinyDirButton("dir", "Select documents", "Seleccionar documentos")
                                             ),
                                             column(6,
-                                                   h5(strong("Codificación:")),
+                                                   h5(strong("Codification:")),
                                                    selectInput("encoding", label = NULL,
                                                               choices = c("Default", "UTF-8-BOM", "ISO-8859-1"), selected = "Default")
                                             ),
                                           ),
                                           fluidRow(
                                             column(12,
-                                                   h5(strong("Escriba el nombre del nuevo corpus: ")),
-                                                   textInput("nameCorp", label = NULL, placeholder = "Nombre del nuevo corpus")
+                                                   h5(strong("Whrite a name for the new corpus: ")),
+                                                   textInput("nameCorp", label = NULL, placeholder = "Name of the new corpus")
                                             ),
                                           ),
                                           fluidRow(
-                                            column(12, align = "right", actionButton("dirCreate", label = "Crear", width = 'auto')),
+                                            column(12, align = "right", actionButton("dirCreate", label = "Create", width = 'auto')),
                                           )
                                         )
                                  ),
                                  column(6, 
                                         wellPanel(
-                                          fluidRow(column(12, h4(strong("Crear terminologia")))),
+                                          fluidRow(column(12, h4(strong("Create terminology")))),
                                           fluidRow(
                                             column(6,
                                                    h5(strong("Corpus: ")),
@@ -91,7 +92,7 @@ fluidPage(
                                                    #shinyDirButton("dir", "Seleccionar corpus", "Seleccionar documentos")
                                             ),
                                             column(6,
-                                                   h5(strong("Modelo:")),
+                                                   h5(strong("Model:")),
                                                    selectInput("idioma", label = NULL,
                                                                choices = c("afrikaans-afribooms",
                                                                  "ancient_greek-perseus", "ancient_greek-proiel", "arabic-padt",
@@ -123,14 +124,14 @@ fluidPage(
                                           ),
                                           fluidRow(
                                             column(6,
-                                                   h5(strong("Tipo de patrón:")),
+                                                   h5(strong("Pattern type:")),
                                                    selectInput("paternType", label = NULL,
                                                                choices = c("POS" = "pos",
                                                                            "UPOS" = "upos",
                                                                            "RAKE" = "rake"))
                                             ),
                                             column(6,
-                                                   h5(strong("Patrón:")),
+                                                   h5(strong("Pattern:")),
                                                    selectizeInput("patern", label = NULL, 
                                                                   choices = c("N(A|N)*(PD*N(A|N)*)*",
                                                                               "(A|N)*N(P+D*(A|N)*N)*",
@@ -143,21 +144,21 @@ fluidPage(
                                           ),
                                           fluidRow(
                                             column(12,
-                                                   h5(strong("Escriba el nombre de la nueva terminología: ")),
-                                                   textInput("nameTerm", label = NULL, placeholder = "Nombre de la nueva terminología")
+                                                   h5(strong("Enter the name of the new terminology: ")),
+                                                   textInput("nameTerm", label = NULL, placeholder = "Name of the new terminology")
                                             ),
                                           ),
                                           fluidRow(
-                                            column(12, align = "right", actionButton("dirCreateTerm", label = "Crear", width = 'auto')),
+                                            column(12, align = "right", actionButton("dirCreateTerm", label = "Create", width = 'auto')),
                                           )
                                         ),
                                  )
                                ),
-                               column(12, align="center",h1("Descargar")),
+                               column(12, align="center",h1("Download")),
                                fluidRow(
                                  column(6,
                                         wellPanel(
-                                          fluidRow(column(12, h4(strong("Descargar corpus")))),
+                                          fluidRow(column(12, h4(strong("Download corpus")))),
                                           fluidRow(
                                             column(8, selectInput("CorpusForDownload",label = NULL, choices = corpusList, selected = currentCorpus)),
                                             column(4, align = "right", downloadButton("downloadDataCorpus", "Download"))
@@ -166,7 +167,7 @@ fluidPage(
                                  ),
                                  column(6,
                                         wellPanel(
-                                          fluidRow(column(12, h4(strong("Descargar terminologia")))),
+                                          fluidRow(column(12, h4(strong("Download terminologia")))),
                                           fluidRow(
                                             column(8, selectInput("TermForDownload",label = NULL, choices = termList, selected = NULL)),
                                             column(4, align = "right", downloadButton("downloadDataTerm", "Download"))
@@ -174,16 +175,16 @@ fluidPage(
                                         )
                                  )
                                ),
-                               column(12, align="center",h1("Subir")),
+                               column(12, align="center",h1("Upload")),
                                fluidRow(
                                  column(6, 
                                         wellPanel(
-                                          fluidRow(column(12, h4(strong("Subir corpus")))),
+                                          fluidRow(column(12, h4(strong("Upload corpus")))),
                                           fluidRow(
                                             # column(6, align = "left", shinyDirButton("dirCorp", "Seleccionar corpus", "Seleccionar documentos")),
                                             # column(6, align = "right", actionButton("dirCreateCorp", label = "Subir", width = 'auto'))
                                             column(12,
-                                              fileInput("dirCorp", "archivo tipo CSV",
+                                              fileInput("dirCorp", "CSV file type",
                                                         multiple = FALSE,
                                                         accept = c("text/csv",
                                                                    "text/comma-separated-values,text/plain",
@@ -195,133 +196,144 @@ fluidPage(
                                  ),
                                  column(6, 
                                         wellPanel(
-                                          fluidRow(column(12, h4(strong("Subir terminologia")))),
+                                          fluidRow(column(12, h4(strong("Upload terminology")))),
                                           fluidRow(
                                             # column(6, align = "left", shinyDirButton("dirTerm", "Seleccionar Terminología", "Seleccionar documentos")),
                                             # column(6, align = "right", actionButton("dirCreateTerm", label = "Subir", width = 'auto'))
                                             column(12,
-                                                   fileInput("dirTerm", "archivo tipo CSV",
+                                                   fileInput("dirTerm", "CSV file type",
                                                              multiple = FALSE,
                                                              accept = c("text/csv",
                                                                         "text/comma-separated-values,text/plain",
                                                                         ".csv")
                                                    )
                                             ),
+                                          ),
+                                          fluidRow(column(12, h4(strong("Upload terminology TXT")))),
+                                          fluidRow(
+                                            column(12,
+                                                   fileInput("dirTermTXT", "TXT file type",
+                                                             multiple = FALSE,
+                                                             accept = c("text",
+                                                                        "text,text/plain",
+                                                                        ".txt")
+                                                   )
+                                            ),
                                           )
                                         )
                                  )
                                ),
-                               column(12, align="center",h1("Eliminar")),
+                               column(12, align="center",h1("Delete")),
                                fluidRow(
                                  column(6, 
                                         wellPanel(
-                                          fluidRow(column(12, h4(strong("Eliminar corpus")))),
+                                          fluidRow(column(12, h4(strong("Delete corpus")))),
                                           fluidRow(
-                                            column(8, textInput("corpusDelText", label = NULL, placeholder = "Escriba el nombre del corpus para borrar")),
-                                            column(4, align = "right", actionButton("corpusDelBut", label = "Eliminar", width = 'auto'))
+                                            column(8, textInput("corpusDelText", label = NULL, placeholder = "Enter the name of the corpus to delete")),
+                                            column(4, align = "right", actionButton("corpusDelBut", label = "Delete", width = 'auto'))
                                           )
                                         ),
                                   ),
                                  column(6,
                                         wellPanel(
-                                          fluidRow(column(12, h4(strong("Eliminar Terminología")))),
+                                          fluidRow(column(12, h4(strong("Delete Terminology")))),
                                           fluidRow(
-                                            column(8, textInput("termDelText", label = NULL, placeholder = "Escriba el nombre de la terminología para borrar")),
-                                            column(4, align = "right", actionButton("termDelBut", label = "Eliminar", width = 'auto'))
+                                            column(8, textInput("termDelText", label = NULL, placeholder = "Enter the name of the terminology to delete")),
+                                            column(4, align = "right", actionButton("termDelBut", label = "Delete", width = 'auto'))
                                           )
                                         )
                                  )
                                )
                       ),
-                      tabPanel("Gestor de terminología", value = "termin", icon = icon("file-alt"),
+                      tabPanel("Terminology Manager", value = "termin", icon = icon("file-alt"),
                                fluidRow( 
-                                 column(3, actionButton("seeListChanges", "Lista de cambios", width = '130px', style='height:30px')),
-                                 column(3, offset = 7, helpText("Indique su nombre para mantener un control de los cambios", style = "font-size:12px")),
-                                 column(2, textInputAddon(inputId = "user", label = NULL, placeholder = "Usuario", addon = icon("user")))),
+                                 column(7, actionButton("seeListChanges", "List of changes", width = '130px', style='height:30px')),
+                                 column(3, helpText("ndicate your name to keep track of changes", style = "font-size:12px")),
+                                 column(2, textInputAddon(inputId = "user", label = NULL, placeholder = "User", addon = icon("user")))),
                                fluidRow( 
                                  column(4,
                                         wellPanel( style = "height:170px",
-                                                   textInput("addTermText", h4("Añadir términos"), placeholder = "Escriba el nuevo término..."),
+                                                   textInput("addTermText", h4("Add terms"), placeholder = "Whrite here a new term..."),
                                                    #updateTextInput(session,"addTermText", h4("Añadir términos"), value="") #probar en el server
-                                                   actionButton("addTerm", "Añadir", width = '90px', style='height:30px')
+                                                   actionButton("addTerm", "Add", width = '90px', style='height:30px')
                                         )),
                                  column(4,
                                         
                                         wellPanel( style = "height:170px",
-                                                   h4("Eliminar términos"),
-                                                   p("Seleccione aquellos términos que desee eliminar y pulse el botón."),
-                                                   actionButton("removeTerm", "Eliminar", width = 'auto', style='height:30px')
+                                                   h4("Remove terms"),
+                                                   p("Select the terms you whant to delete and press the button."),
+                                                   actionButton("removeTerm", "Remove", width = 'auto', style='height:30px')
                                         )
                                  ),
                                  column(4,
                                         wellPanel( style = "height:170px",
-                                                   h4("Modificar términos"),
-                                                   p("Seleccione el término, escriba la modificación y pulse el botón."),
+                                                   h4("Modify terms"),
+                                                   p("Select the term, type the modification and press the button."),
                                                    fluidRow(
-                                                     column(8, textInput("modifyTermText", label = NULL, placeholder = "Término a modificar")), #dtTerminology_rows_selected
+                                                     column(8, textInput("modifyTermText", label = NULL, placeholder = "Term to be modified")), #dtTerminology_rows_selected
                                                      column(2, actionButton("modifyTerm", label = icon("check-circle"), width = '50px', style='height:30px'))
                                                    )
                                         )
                                  )),
                                wellPanel( style = "background: white",
-                                          h4("Tabla con los términos actuales:"),
+                                          h4("Table of current terms:"),
                                           dataTableOutput("dtTerminology")
                                )
                       ),
-                      tabPanel("Datos estadisticos", value = "stat", icon = icon("list"),
-                               h4("Información estadistica relacionada con el corpus de los documentos."),
+                      tabPanel("Statistical data", value = "stat", icon = icon("list"),
+                               h4("Statistical information related to the corpus of documents."),
                                br(),
                                wellPanel(
                                  fluidRow(
                                    column(6,
-                                          p("Tamaño del corpus:", span(textOutput("corpSize", inline = TRUE), style = "font-weight:bold"), "MB"),
-                                          p("Tamaño de los documentos originales:", span(textOutput("docSize", inline = TRUE), style = "font-weight:bold"), "MB"),
-                                          p("Numero de documentos: ", span(textOutput("numDocs", inline = TRUE), style = "font-weight:bold"), "Documentos")
+                                          p("Size of the corpus:", span(textOutput("corpSize", inline = TRUE), style = "font-weight:bold"), "MB"),
+                                          p("Size of the original documents:", span(textOutput("docSize", inline = TRUE), style = "font-weight:bold"), "MB"),
+                                          p("Number of documents: ", span(textOutput("numDocs", inline = TRUE), style = "font-weight:bold"), "documents")
                                           ),
                                    column(6,
-                                          p("Cantidad total de tokens:", span(textOutput("tokenSize", inline = TRUE), style = "font-weight:bold"), "tokens"),
-                                          p("Cantidad total de páginas:", span(textOutput("pageTotal", inline = TRUE), style = "font-weight:bold"), "paginas"),
+                                          p("Total number of tokens:", span(textOutput("tokenSize", inline = TRUE), style = "font-weight:bold"), "tokens"),
+                                          p("Total number of pages:", span(textOutput("pageTotal", inline = TRUE), style = "font-weight:bold"), "pages"),
                                         ),
                                  ),
                                ),
                                wellPanel( style = "background: white",
-                                          h4("Metadatos del corpus actual:"),
+                                          h4("Current corpus metadata:"),
                                           dataTableOutput("Metadata")
                                )
                       ),
                       tabPanel("Contextualizar", value = "context", icon = icon("quote-left"),
-                               h2("Ver terminos en contexto"),
+                               h2("Terms in context"),
                                fluidRow(
                                  column(5,
                                         wellPanel(
                                           style = "background: white",
-                                          h4("Tabla con los términos actuales:"),
+                                          h4("Current trerms table:"),
                                           dataTableOutput("dtTermsRaw")
                                         )
                                  ),
                                  column(7,
                                         wellPanel( style = "background: white",
-                                                   h4("Tabla con los términos en contexto:"),
+                                                   h4("Term selected in context:"),
                                                    dataTableOutput("dtTerms")
                                         )
                                  )
                                )
                       ),
-                      tabPanel("Comparar Terminologías", value = "CompTerm", icon = icon("less-than"),
+                      tabPanel("Compare Terminologies", value = "CompTerm", icon = icon("less-than"),
                                fluidRow(
                                  column(6,
                                         wellPanel(
                                           style = "background: white",
-                                          h4("Tabla con los términos actuales:"),
-                                          fluidRow(radioGroupButtons("termComp1", label = h4(("Seleccione una terminologia para comparar:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
+                                          h4("Table of terminology 1:"),
+                                          fluidRow(radioGroupButtons("termComp1", label = h4(("Select a terminology to compare:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
                                           dataTableOutput("tdTermsComp1")
                                         )
                                  ),
                                  column(6,
                                         wellPanel( 
                                           style = "background: white",
-                                          h4("Tabla con los términos en contexto:"),
-                                          fluidRow(radioGroupButtons("termComp2", label = h4(("Seleccione otra terminologia para comparar:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
+                                          h4("Table of terminology 2:"),
+                                          fluidRow(radioGroupButtons("termComp2", label = h4(("Select another terminology to compare:")), justified= TRUE, choices = termList, selected = NULL, direction = "vertical")),
                                           dataTableOutput("tdTermsComp2")
                                         )
                                  )
@@ -329,13 +341,13 @@ fluidPage(
                                wellPanel(
                                  fluidRow(
                                    column(6, align = "center",
-                                          p("Se han seleccionado:", span(textOutput("dtComp1Rows", inline = TRUE), style = "font-weight:bold"), "Terminos erroneos en la Terminología 1"),
+                                          p(span(textOutput("dtComp1Rows", inline = TRUE), style = "font-weight:bold"), "terms are wrong in Terminology 1"),
                                    ),
                                    column(6, align = "center",
-                                          p("Se han seleccionado:", span(textOutput("dtComp2Rows", inline = TRUE), style = "font-weight:bold"), "Terminos erroneos en la Terminología 2"),
+                                          p(span(textOutput("dtComp2Rows", inline = TRUE), style = "font-weight:bold"), "terms are wrong on Terminology 2"),
                                    ),
                                    column(12, align = "center",
-                                          p("El grado de solapamiento entre las dos terminologías es de:", span(textOutput("Solapamiento", inline = TRUE), style = "font-weight:bold"), "Terminos"),
+                                          p(span(textOutput("Solapamiento", inline = TRUE), style = "font-weight:bold"), "Overlap degree between Terminologies"),
                                    ),
                                  ),
                                ),
