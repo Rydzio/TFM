@@ -25,10 +25,8 @@ library(stringr)
 library(doParallel)
 library(pbapply)
 
-library(shi18ny)
-
-
-library(udpipe)
+# library(shi18ny)
+# library(udpipe)
 
 
 setwd("~/GitHub/TFM/TerminologiasInteractivas")
