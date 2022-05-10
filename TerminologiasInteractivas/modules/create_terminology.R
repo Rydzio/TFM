@@ -167,6 +167,9 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
                               RAKE = subset(stats, select=c("RAKE")),
                               cValue = subset(stats, select=c("cvalue"))
     )
+    
+    colnames(terminology)[5] <- "Frecuencia"
+    
   } else if(paternType == "pos"){
     print("Extraccion de terminos por documento empleando POS: ")
     tic()
@@ -280,6 +283,7 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
                               RAKE = subset(stats, select=c("RAKE")),
                               cValue = subset(stats, select=c("cvalue"))
                               )
+    colnames(terminology)[5] <- "Frecuencia"
     
   } else {
     
@@ -338,6 +342,10 @@ createTerminology <- function(tDocs, nameCorpus, nameTerm, nThreads, patr, pater
                               RAKE = subset(stats, select=c("rake")),
                               cValue = subset(stats, select=c("cvalue"))
     )
+    
+    colnames(terminology)[5] <- "Frecuencia"
+    colnames(terminology)[7] <- "RAKE"
+    
   }
   toc()
   
